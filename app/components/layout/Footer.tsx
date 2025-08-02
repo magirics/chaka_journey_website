@@ -3,7 +3,7 @@ import { NavIcon } from "./Navbar";
 
 export default function Footer() {
   return (
-    <footer className="flex flex-col gap-8 p-4 bg-primary text-primary-content md:flex-row md:justify-around">
+    <footer className="w-screen flex flex-col gap-8 p-4 bg-primary text-primary-content md:flex-row md:justify-around">
       <Subscribe />
       <Us />
       <Terms />
