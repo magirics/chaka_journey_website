@@ -23,14 +23,14 @@ export function Subscribe() {
           placeholder="Nombre"
           name="name"
           id="name"
-          className="input w-full bg-primary focus:border-primary-content"
+          className="input w-full bg-primary focus:border-primary-content static"
         />
         <input
           type="text"
           placeholder="Correo"
           name="email"
           id="email"
-          className="input w-full bg-primary focus:border-primary-content"
+          className="input w-full bg-primary focus:border-primary-content static"
         />
         <button className="btn btn-outline">Suscribir</button>
       </form>
