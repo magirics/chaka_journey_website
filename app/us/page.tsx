@@ -1,3 +1,5 @@
+import PageTitle from "../components/ui/PageTitle";
+
 const images = [
   "./us/image (1).jpg",
   "./us/image (2).jpg",
@@ -25,7 +27,7 @@ text = text.trim();
 export default function Us() {
   return (
     <>
-      <h1 className="m-20 text-5xl">Nuestra experiencia</h1>
+      <PageTitle>Nuestra experiencia</PageTitle>
 
       <div className="grid w-full justify-items-center gap-1 md:grid-cols-6 md:grid-rows-6">
         <img
