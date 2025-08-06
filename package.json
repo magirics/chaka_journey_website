@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "localhost": "ssh -R 80:localhost:3000 nokey@localhost.run"
   },
   "dependencies": {
     "cally": "^0.8.0",
