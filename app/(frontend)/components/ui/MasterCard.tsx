@@ -10,7 +10,7 @@ type MasterCardProps = {
 };
 
 // Use 480x480 images
-function MasterCard(props: MasterCardProps) {
+export default function MasterCard(props: MasterCardProps) {
   const { image, on_hover_image, craft, name, city, country, price, days } =
     props;
 
