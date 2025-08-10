@@ -2,7 +2,7 @@ import PageTitle from "../components/ui/PageTitle";
 
 const experiences = [
   {
-    image: "./draft/experiences/image (1).avif",
+    image: "/draft/experiences/image (1).avif",
     user: { name: "Steven", country: "Estados Unidos" },
     master: {
       craft: "Escultura de arcilla",
@@ -11,7 +11,7 @@ const experiences = [
     },
   },
   {
-    image: "./draft/experiences/image (2).avif",
+    image: "/draft/experiences/image (2).avif",
     user: { name: "Sadia", country: "Qatar" },
     master: {
       craft: "Fotomontaje",
@@ -20,7 +20,7 @@ const experiences = [
     },
   },
   {
-    image: "./draft/experiences/image (3).avif",
+    image: "/draft/experiences/image (3).avif",
     user: { name: "Allison", country: "Estados Unidos" },
     master: {
       craft: "Ceramica Ornamental",
@@ -29,7 +29,7 @@ const experiences = [
     },
   },
   {
-    image: "./draft/experiences/image (4).avif",
+    image: "/draft/experiences/image (4).avif",
     user: { name: "Andrea", country: "Honk Kong" },
     master: {
       craft: "Figuras de Cerámica",

@@ -52,7 +52,7 @@ type NavIconProps = {
 export function NavIcon({ href, icon }: NavIconProps) {
   return (
     <Link href={href}>
-      <img src={`./icons/${icon}.svg`} className="hover:bg-con h-6" />
+      <img src={`/icons/${icon}.svg`} className="hover:bg-con h-6" />
     </Link>
   );
 }
@@ -97,7 +97,7 @@ function NavHead({ handleMinimize }: { handleMinimize: MouseEventHandler }) {
       </div>
       <div className="grow" />
       <button onClick={handleMinimize}>
-        <img src="./icons/burger-menu.svg" className="w-8"></img>
+        <img src="/icons/burger-menu.svg" className="w-8"></img>
       </button>
     </nav>
   );

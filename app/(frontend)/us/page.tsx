@@ -1,13 +1,13 @@
 import PageTitle from "../components/ui/PageTitle";
 
 const images = [
-  "./draft/us/image (1).jpg",
-  "./draft/us/image (2).jpg",
-  "./draft/us/image (3).jpg",
-  "./draft/us/image (4).jpg",
-  "./draft/us/image (5).jpg",
-  "./draft/us/image (6).jpg",
-  "./draft/us/image (7).jpg",
+  "/draft/us/image (1).jpg",
+  "/draft/us/image (2).jpg",
+  "/draft/us/image (3).jpg",
+  "/draft/us/image (4).jpg",
+  "/draft/us/image (5).jpg",
+  "/draft/us/image (6).jpg",
+  "/draft/us/image (7).jpg",
 ];
 
 let text = `
