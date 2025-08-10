@@ -24,7 +24,7 @@
     ],
     "paths": {
       "@/*": [
-        "./*"
+        "./app/(frontend)/components/*"
       ],
       "@payload-config": [
         "./payload.config.ts"
