@@ -1,8 +1,8 @@
 export default function Pricing() {
   return (
     <>
-      <div className="w-70">
-        <div className="p-6 space-y-4">
+      <div className="md:w-60">
+        <div className="space-y-4">
           <h2 className="text-lg font-bold">Precio</h2>
           
           <ul>
