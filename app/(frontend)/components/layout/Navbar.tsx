@@ -63,16 +63,8 @@ export function MobileNavbar() {
   const handleMinimize = () => setVisible((visible) => !visible);
 
   return (
-    <div className="h-12 md:hidden">
-      <div
-        style={{
-          position: right === "100%" ? "sticky" : "fixed",
-          top: 0,
-          left: 0,
-        }}
-      >
-        <NavHead handleMinimize={handleMinimize} />
-      </div>
+    <div className="sticky top-0 left-0 z-10 h-12 md:hidden">
+      <NavHead handleMinimize={handleMinimize} />
       <div
         className="fixed transition-transform duration-100"
         style={{
@@ -119,7 +111,7 @@ function NavBody() {
 
 export function DesktopNavbar() {
   return (
-    <nav className="bg-base-100 sticky top-0 left-0 hidden h-12 w-screen flex-row px-4 md:flex">
+    <nav className="bg-base-100 sticky top-0 left-0 z-10 hidden h-12 w-screen flex-row px-4 md:flex">
       <div className="mr-4 flex flex-row items-center">
         <Logo />
       </div>

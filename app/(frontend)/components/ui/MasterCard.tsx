@@ -16,7 +16,7 @@ export default function MasterCard(props: MasterCardProps) {
 
   return (
     <div className="inline-block md:w-60">
-      <div className="group relative overflow-hidden">
+      <div className="group relative z-0 overflow-hidden">
         <img
           src={image}
           className="absolute top-0 left-0 transition duration-400 first:group-hover:opacity-0"
