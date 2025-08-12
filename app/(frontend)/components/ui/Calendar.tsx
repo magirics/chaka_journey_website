@@ -11,7 +11,7 @@ export default function Calendar() {
           slot="previous"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          className="h-4 bg-base-100 -m-1"
+          className="bg-base-100 -m-1 h-4"
         >
           <path d="M15.75 19.5 8.25 12l7.5-7.5" />
         </svg>
@@ -20,12 +20,12 @@ export default function Calendar() {
           slot="next"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          className="h-4 bg-base-100 -m-1"
+          className="bg-base-100 -m-1 h-4"
         >
           <path d="m8.25 4.5 7.5 7.5-7.5 7.5" />
         </svg>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col gap-8 md:flex-row">
           <calendar-month></calendar-month>
           <calendar-month offset={1}></calendar-month>
         </div>
