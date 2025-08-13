@@ -1,6 +1,9 @@
+"use client";
+
 import { NavIcon } from "@/layout/Navbar";
 import MasterCard from "@/ui/MasterCard";
 import PageTitle from "@/ui/PageTitle";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 
 const masters = [
   {
@@ -66,14 +69,47 @@ const masters = [
 ];
 
 export default function Masters() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  const handleChange = (ev: React.SyntheticEvent) => {
+    const searchText = (ev.target as HTMLInputElement).value.toLowerCase();
+
+    const params = new URLSearchParams(searchParams);
+    if (searchText) params.set("search", searchText);
+    else params.delete("search");
+
+    replace(`${pathname}?${params.toString()}`);
+  };
+
+  const searchText = searchParams.get("search")?.toString() || "";
+
+  const filteredMasters = masters.filter((master) => {
+    const allFields =
+      master.name +
+      master.craft +
+      master.city +
+      master.country +
+      master.price +
+      master.days;
+
+    console.log(allFields);
+    return allFields.toLowerCase().includes(searchText);
+  });
+
   return (
     <>
-      <label className="input my-10 md:w-120">
+      <label
+        className="input my-10 md:w-120"
+        onChange={handleChange}
+        defaultValue={searchText}
+      >
         <NavIcon href="" icon="search" />
         <input />
       </label>
       <div className="mb-16 flex w-full flex-wrap justify-center gap-8">
-        {masters.map((master) => (
+        {filteredMasters.map((master) => (
           <MasterCard key={master.image} {...master} />
         ))}
       </div>
