@@ -4,6 +4,7 @@ import { NavIcon } from "@/layout/Navbar";
 import MasterCard from "@/ui/MasterCard";
 import PageTitle from "@/ui/PageTitle";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useDebouncedCallback } from "use-debounce";
 
 const masters = [
   {
@@ -73,15 +74,16 @@ export default function Masters() {
   const pathname = usePathname();
   const { replace } = useRouter();
 
-  const handleChange = (ev: React.SyntheticEvent) => {
+  const handleChange = useDebouncedCallback((ev: React.SyntheticEvent) => {
     const searchText = (ev.target as HTMLInputElement).value.toLowerCase();
+    console.log(searchText);
 
     const params = new URLSearchParams(searchParams);
     if (searchText) params.set("search", searchText);
     else params.delete("search");
 
     replace(`${pathname}?${params.toString()}`);
-  };
+  }, 300);
 
   const searchText = searchParams.get("search")?.toString() || "";
 
@@ -94,7 +96,6 @@ export default function Masters() {
       master.price +
       master.days;
 
-    console.log(allFields);
     return allFields.toLowerCase().includes(searchText);
   });
 
