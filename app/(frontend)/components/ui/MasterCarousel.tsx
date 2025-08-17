@@ -1,3 +1,5 @@
+import MasterCard from "./MasterCard";
+
 const masters = [
   {
     image: "draft/masters/master_1.avif",
@@ -43,7 +45,7 @@ const masters = [
 
 export default function MasterCarousel() {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:flex-wrap">
+    <div className="flex flex-col gap-4 md:flex-row md:flex-wrap justify-center">
       {masters.map((master) => (
         <MasterCard key={master.name} {...master} />
       ))}
