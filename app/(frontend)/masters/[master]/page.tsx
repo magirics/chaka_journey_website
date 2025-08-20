@@ -1,3 +1,4 @@
+import Lazy from "@/Lazy";
 import Calendar from "@/ui/Calendar";
 import Pricing from "@/ui/Pricing";
 
@@ -78,7 +79,9 @@ export default function Master() {
 
         <h2 className="mb-2 text-2xl">Reservación</h2>
         <div className="mb-8 flex justify-center">
-          <Calendar />
+          <Lazy>
+            <Calendar />
+          </Lazy>
         </div>
       </main>
     </>
