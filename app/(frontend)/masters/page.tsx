@@ -4,6 +4,7 @@ import { NavIcon } from "@/layout/Navbar";
 import MasterCard from "@/ui/MasterCard";
 import PageTitle from "@/ui/PageTitle";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
 const masters = [
@@ -120,5 +121,5 @@ export default function Masters() {
         ))}
       </div>
     </>
-  );
+  )
 }

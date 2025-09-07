@@ -34,7 +34,7 @@ export default function Experience() {
 
         <ul className="mx-auto flex max-w-150 flex-col gap-1">
           {images.map((image) => (
-            <li>
+            <li key={image}>
               <img src={image} />
             </li>
           ))}
