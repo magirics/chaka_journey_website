@@ -4,6 +4,7 @@ import { NavIcon } from "@/layout/Navbar";
 import MasterCard from "@/ui/MasterCard";
 import PageTitle from "@/ui/PageTitle";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
 const masters = [
@@ -70,6 +71,17 @@ const masters = [
 ];
 
 export default function Masters() {
+  
+  return (
+    <>
+      <Suspense>
+        <MastersSearch />
+      </Suspense>
+    </>
+  );
+}
+
+function MastersSearch() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
@@ -115,5 +127,5 @@ export default function Masters() {
         ))}
       </div>
     </>
-  );
+  )
 }
