@@ -36,7 +36,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "app/stripe/cancel/page.js", "app/stripe/success/page.js"  ],
   "exclude": [
     "node_modules"
   ]

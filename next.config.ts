@@ -11,6 +11,19 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        "https://reimagined-carnival-jprqpgv5qr6cqv5q-3000.app.github.dev",
+        "http://localhost:3000"
+      ],
+    },
+  },
+  env: {
+    PAYLOAD_SECRET: process.env.PAYLOAD_SECRET,
+    DATABASE_URI: process.env.DATABASE_URI,
+  },
 };
 
 export default withPayload(nextConfig);
