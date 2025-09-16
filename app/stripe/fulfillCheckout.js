@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import payload from 'payload';
+import nodemailer from 'nodemailer';
 //import config from '@/payload.config'; 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -29,20 +30,24 @@ export async function fulfillCheckout(sessionId) {
       });
     }
 
-    // 3️⃣ Crear la reserva en Payload
-    const reserva = await payload.create({
-      collection: 'reservas',
-      data: {
-        stripeSessionId: sessionId,
-        customerEmail: checkoutSession.customer_details.email,
-        amount: checkoutSession.amount_total / 100,
-        status: 'paid',
-        items: checkoutSession.line_items?.data?.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-        })) || [],
-      },
-    });
+    // 🔹 Variables reutilizables
+const customerEmail = checkoutSession.customer_details.email;
+const amount = checkoutSession.amount_total / 100;
+
+// 3️⃣ Crear la reserva en Payload
+const reserva = await payload.create({
+  collection: 'reservas',
+  data: {
+    stripeSessionId: sessionId,
+    customerEmail,
+    amount,
+    status: 'paid',
+    items: checkoutSession.line_items?.data?.map(item => ({
+      description: item.description,
+      quantity: item.quantity,
+    })) || [],
+  },
+});
 
     console.log('✅ Reserva creada en Payload con ID:', reserva.id);
     
@@ -58,11 +63,41 @@ export async function fulfillCheckout(sessionId) {
     });
 
     await transporter.sendMail({
-      from:    `"Chaka Journey" <${process.env.SMTP_USER}>`,
-      to:       customerEmail,
-      subject: '✅ Confirmación de tu reserva',
-      html:    `<p>Pago recibido: $${amount}</p><p>Código: ${reserva.id}</p>`,
-    });
+  from: `"Chaka Journey" <${process.env.SMTP_USER}>`,
+  to: customerEmail,
+  subject: '✨ Confirmación de tu reserva - Chaka Journey',
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; background-color: #f9f9f9; border: 1px solid #eee;">
+      <h2 style="color: #4CAF50; text-align: center;">✅ ¡Tu pago fue recibido!</h2>
+      <p style="font-size: 16px; color: #333;">
+        Hola <strong>${customerEmail}</strong>,<br><br>
+        Gracias por confiar en <strong>Chaka Journey</strong>. Tu reserva ha sido confirmada con éxito.
+      </p>
+      
+      <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin: 20px 0;">
+        <p style="margin: 5px 0; font-size: 15px;"><strong>Monto:</strong> $${amount}</p>
+        <p style="margin: 5px 0; font-size: 15px;"><strong>Código de reserva:</strong> ${reserva.id}</p>
+        <p style="margin: 5px 0; font-size: 15px;"><strong>Estado:</strong> ${reserva.status}</p>
+      </div>
+      
+      <p style="font-size: 15px; color: #555;">
+        Nos pondremos en contacto contigo con más detalles muy pronto.<br>
+        Mientras tanto, puedes comunicarte con nosotros si tienes alguna consulta.
+      </p>
+      
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="https://chaka.com" style="background-color: #4CAF50; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; display: inline-block;">
+          Ver tu reserva
+        </a>
+      </div>
+      
+      <p style="margin-top: 30px; font-size: 13px; color: #aaa; text-align: center;">
+        © 2025 Chaka Journey · Todos los derechos reservados
+      </p>
+    </div>
+  `,
+});
+
     console.log(`📧 Correo enviado a ${customerEmail}`);
 
  
