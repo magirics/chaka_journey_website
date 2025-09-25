@@ -1,114 +1,153 @@
-import Lazy from "@/Lazy";
-import Calendar from "@/ui/Calendar";
-import Pricing from "@/ui/Pricing";
+"use client";
 
-export default function Master() {
-  const { name, craft, city, country, hours, days } = {
+import { NavIcon } from "@/layout/Navbar";
+import MasterCard from "@/ui/MasterCard";
+import Pricing from "@/ui/Pricing";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useDebouncedCallback } from "use-debounce";
+import React from "react";
+
+const masters = [
+  {
+    image: "draft/masters/master_5.avif",
+    on_hover_image: "draft/masters/master_5_on_hover.avif",
     name: "Viviana",
     craft: "Tango Argentino",
     city: "Buenos Aires",
     country: "Argentina",
-    hours: 12,
+    price: 575,
     days: 3,
+  },
+  {
+    image: "draft/masters/master_6.avif",
+    on_hover_image: "draft/masters/master_6_on_hover.avif",
+    name: "Chikako",
+    craft: "Caligrafía Japonesa",
+    city: "Japon",
+    country: "Kyoto",
+    price: 700,
+    days: 3,
+  },
+  {
+    image: "draft/masters/master_7.avif",
+    on_hover_image: "draft/masters/master_7_on_hover.avif",
+    name: "Pum Pum",
+    craft: "Arte Callejero",
+    city: "Argentina",
+    country: "Buenos Aires",
+    price: 885,
+    days: 3,
+  }, {
+    image: "draft/masters/master_8.avif",
+    on_hover_image: "draft/masters/master_8_on_hover.avif",
+    name: "Takaoka",
+    craft: "Encerado Tradicional",
+    city: "Japon",
+    country: "Kyoto",
+    price: 3365,
+    days: 3,
+  },
+  {
+    image: "draft/masters/master_9.avif",
+    on_hover_image: "draft/masters/master_9_on_hover.avif",
+    name: "Takaoka",
+    craft: "Encerado Tradicional",
+    city: "Japon",
+    country: "Kyoto",
+    price: 3365,
+    days: 3,
+  },
+  {
+    image: "draft/masters/master_10.avif",
+    on_hover_image: "draft/masters/master_10_on_hover.avif",
+    name: "Takaoka",
+    craft: "Encerado Tradicional",
+    city: "Japon",
+    country: "Kyoto",
+    price: 3365,
+    days: 3,
+  },
+];
+
+export default function Masters() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  // 🔹 Checkout handler
+  const handleClick = async (master: typeof masters[0]) => {
+    const res = await fetch("/stripe/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: master.name,
+        price: master.price,
+        days: master.days,
+      }),
+    });
+
+    const data = await res.json();
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      console.error("Error en checkout:", data);
+    }
   };
 
-  const overview =
-    "Apasionarse mientras te expresas a través del tango en las calles de Buenos Aires junto a la maestra de tango Viviana. Experimente la vida cotidiana en la capital mundial del tango, luego pase sus noches bailando en las milongas de la ciudad. Realmente no hay nada como experimentar el tango en esta vibrante ciudad.";
+  // 🔹 Search handler
+  const handleChange = useDebouncedCallback((ev: React.SyntheticEvent) => {
+    const searchText = (ev.target as HTMLInputElement).value.toLowerCase();
 
-  const meet_the_master =
-    "Tango is in Viviana’s genes. Born and raised in Buenos Aires, mecca of tango, Viviana has been a tango instructor and performer since 1993. She has founded tango groups, taught classes, organized milongas and performed across Argentina, US and Europe. Between Argentine stage and social styles of tango, Viviana specializes in social tango. As a teacher, she is known to make this dance form accessible to a wide audience by distilling the essentials of tango. She focuses on connecting with one's own expression and discovering the relationship with others through a musical and emotional body language. As neuroscience suggests, she feels tango has the unique ability to produce large amounts of brain activity while maintaining a zen state of mind. It is sophisticated and challenging and can only be decrypted by getting immersed in Buenos Aires and understanding its culture, origin and constant evolution. Viviana’s passion will get you addicted to tango and Buenos Aires. She may even make you love Fernet!";
+    const params = new URLSearchParams(searchParams);
+    if (searchText) params.set("search", searchText);
+    else params.delete("search");
 
-  const experience_includes = `
-▪ Experiencing Viviana’s everyday life in Buenos Aires, the tango capital.
-▪ One hour of private instruction everyday.
-▪ Two group classes to practice with other dance partners.
-▪ Two evenings dancing in Viviana’s favorite milongas in the city - one underground and one upscale. Includes entrance fees.
-▪ Visiting local cafes that are known for their tango history.
-▪ Visiting Viviana’s musician friends for their regular tango music jams, if possible.
-▪ Option to visit Viviana’s favorite tango shoe store if you need to buy a pair.
-  `;
+    replace(`${pathname}?${params.toString()}`);
+  }, 300);
 
-  const explore_city =
-    "The many cultures that have filtered into Buenos Aires via its ports have led to French architecture, English lifestyle, Spanish culture, and Italian flair. Made up of bits and pieces from around the world, Buenos Aires nevertheless has an identity of its own. Its urban art scene, in particular, is one of the best in the world, due to relaxed laws that enable artists to leave their mark just about everywhere in the city. Meanwhile, the neighborhood of Palermo is a hip, bohemian network of bars, outdoor cafes, and trendy shops housed in elegant old houses and repurposed warehouses.";
+  const searchText = searchParams.get("search")?.toString() || "";
 
-  const additional_details =
-    "This VAWAA is available for a longer duration. If interested in extending your time, let us know by how many days and we will do our best to accommodate you.";
+  const filteredMasters = masters.filter((master) => {
+    const allFields =
+      master.name +
+      master.craft +
+      master.city +
+      master.country +
+      master.price +
+      master.days;
+
+    return allFields.toLowerCase().includes(searchText);
+  });
 
   return (
     <>
-      <Hero />
+      {/* 🔍 Search bar */}
+      <label className="input my-10 md:w-120">
+        <NavIcon href="" icon="search" />
+        <input
+          placeholder="Buscar..."
+          onChange={handleChange}
+          defaultValue={searchText}
+        />
+      </label>
 
-      <main className="mx-8 md:w-200">
-        <span>
-          {city}, {country} {hours} horas por {days} días
-        </span>
-
-        <div className="divider" />
-
-        <div className="space-x-16 md:flex">
-          <div>
-            <h1 className="mb-4 text-4xl">
-              {craft} con {name}
-            </h1>
-            <p>{overview}</p>
+      {/* 🔹 Cards + Pricing */}
+      <div className="mb-16 flex w-full flex-wrap justify-center gap-12">
+        {filteredMasters.map((master) => (
+          <div
+            key={master.image}
+            className="flex flex-col items-center gap-6 border rounded-lg p-4 shadow-md"
+          >
+            <MasterCard {...master} />
+            <Pricing
+              price={master.price}
+              guestPrice={230}
+              maxGuests={4}
+              onReserve={() => handleClick(master)}
+            />
           </div>
-
-          <div>
-            <div className="divider md:hidden" />
-            <Pricing />
-          </div>
-        </div>
-
-        <div className="divider" />
-
-        <Tiles />
-
-        <h2 className="mb-2 text-2xl">Conoce al maestro</h2>
-        <p className="mb-16">{meet_the_master}</p>
-
-        <h2 className="mb-2 text-2xl">La experiencia incluye:</h2>
-        <p className="mb-16 whitespace-pre-wrap">{experience_includes}</p>
-
-        <h2 className="mb-2 text-2xl">Explora la ciudad</h2>
-        <p className="mb-16">{explore_city}</p>
-
-        <h2 className="mb-2 text-2xl">Adicional</h2>
-        <p className="mb-16">{additional_details}</p>
-
-        <div className="divider" />
-
-        <h2 className="mb-2 text-2xl">Reservación</h2>
-        <div className="mb-8 flex justify-center">
-          <Lazy>
-            <Calendar />
-          </Lazy>
-        </div>
-      </main>
+        ))}
+      </div>
     </>
-  );
-}
-
-function Hero() {
-  return (
-    <div className="mb-8 w-screen">
-      <img src="/draft/masters/master/hero.avif" />
-    </div>
-  );
-}
-
-function Tiles() {
-  return (
-    <div className="mb-8 grid justify-center gap-4 md:grid-cols-3 md:grid-rows-3 lg:relative lg:-left-30 lg:w-[130%]">
-      <img src="/draft/masters/master/tile_1.avif" />
-      <img src="/draft/masters/master/tile_2.avif" />
-      <img src="/draft/masters/master/tile_3.avif" />
-
-      <img src="/draft/masters/master/tile_4.avif" />
-      <img src="/draft/masters/master/tile_5.avif" />
-      <img src="/draft/masters/master/tile_6.avif" />
-
-      <img src="/draft/masters/master/tile_7.avif" />
-      <img src="/draft/masters/master/tile_8.avif" />
-    </div>
   );
 }

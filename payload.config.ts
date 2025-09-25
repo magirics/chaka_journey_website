@@ -3,19 +3,26 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { buildConfig, type Config } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 import dotenv from 'dotenv'
-// import { config } from 'dotenv'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Reservas } from './collections/Reservas'
+import { Maestros } from './collections/Maestros'
 
 dotenv.config()
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+// 🔹 Extensión del tipo para soportar `express`
+interface ExtendedConfig extends Config {
+  express?: {
+    trustProxy?: boolean
+  }
+}
 
 export default buildConfig({
   admin: {
@@ -24,9 +31,18 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Reservas],
+  collections: [Users, Media, Reservas, Maestros],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
+
+  // 🔹 URL pública para Payload
+  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000',
+
+  // 🔹 Confiar en proxies (Codespaces, Railway, etc.)
+  express: {
+    trustProxy: true,
+  }, cookiePrefix: 'payload',
+
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
@@ -40,4 +56,4 @@ export default buildConfig({
     payloadCloudPlugin(),
     // storage-adapter-placeholder
   ],
-})
+} as ExtendedConfig)

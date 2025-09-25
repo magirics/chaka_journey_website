@@ -15,8 +15,14 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-        "https://reimagined-carnival-jprqpgv5qr6cqv5q-3000.app.github.dev",
-        "http://localhost:3000"
+         // Localhost dev
+        "localhost:3000",
+
+        // Codespaces / GitHub Dev (usa regex-like host wildcard)
+        "ominous-potato-p57p564r9q4299qv-3000.app.github.dev",
+
+        // Producción
+        "https://miapp.com",
       ],
     },
   },
