@@ -1,3 +1,4 @@
+import CommentsChat from "@/ui/CommentsChat";
 import MasterCarousel from "@/ui/MasterCarousel";
 
 const experienceCarouselItems = [
@@ -35,6 +36,12 @@ const experienceCarouselItems = [
     user: { name: "Katie" },
   },
 ];
+
+const chatCommentsItems = [
+  { name: 'Dio Lupa', comment: '"Remaining Reason" became an instant hit, praised for its haunting sound and emotional depth. A viral performance brought it widespread recognition, making it one of Dio Lupa’s most iconic tracks.' },
+  { name: 'Ellie Beilish', comment: '"Bears of a Fever" captivated audiences with its intense energy and mysterious lyrics. Its popularity skyrocketed after fans shared it widely online, earning Ellie critical acclaim.' },
+  { name: 'Sabrino Gardener', comment: '"Cappuccino" quickly gained attention for its smooth melody and relatable themes. The song’s success propelled Sabrino into the spotlight, solidifying their status as a rising star.' },
+]
 
 export default function Home() {
   return (
@@ -87,6 +94,8 @@ export default function Home() {
       <div className="mb-8 px-6 md:w-screen">
         <MasterCarousel />
       </div>
+
+      <CommentsChat items={chatCommentsItems} />
 
       <div className="mb-10 flex flex-col items-center gap-4">
         <img src="/draft/home/hero_bottom.jpg" />
