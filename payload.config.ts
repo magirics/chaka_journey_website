@@ -25,6 +25,28 @@ interface ExtendedConfig extends Config {
 }
 
 export default buildConfig({
+  localization: {
+    locales: [
+      {
+        code: 'en',
+        label: 'English',
+      },
+      {
+        code: 'es',
+        label: 'Spanish',
+      },
+      {
+        code: 'de',
+        label: 'German',
+      },
+      {
+        code: 'fr',
+        label: 'French',
+      },
+    ],
+    defaultLocale: 'en', // required
+    fallback: true, // defaults to true
+  },
   admin: {
     user: Users.slug,
     importMap: {

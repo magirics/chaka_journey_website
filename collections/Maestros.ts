@@ -16,6 +16,7 @@ export const Maestros: CollectionConfig = {
       name: 'nombreCompleto',
       type: 'text',
       required: true,
+      localized: true,
     },
     {
       name: 'key', // DNI
