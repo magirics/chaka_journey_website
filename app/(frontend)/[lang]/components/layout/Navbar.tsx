@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import { MouseEventHandler, useState } from "react";
+import LanguageDropDown from "@/ui/LanguageDropdown";
 
 export default function Navbar() {
   return (
@@ -16,10 +17,10 @@ export default function Navbar() {
 function NavLinks() {
   // prettier-ignore
   return <>
-    <li><NavLink href="/masters" text="Maestros" /></li>
-    <li><NavLink href="/experiences" text="Experiencias" /></li>
-    <li><NavLink href="/us" text="Nosotros" /></li>
-    <li><NavLink href="/contact" text="Contacto" /></li>
+    <li><NavLink href="masters" text="Maestros" /></li>
+    <li><NavLink href="experiences" text="Experiencias" /></li>
+    <li><NavLink href="us" text="Nosotros" /></li>
+    <li><NavLink href="contact" text="Contacto" /></li>
   </>
 }
 
@@ -111,7 +112,7 @@ function NavBody() {
 
 export function DesktopNavbar() {
   return (
-    <nav className="bg-base-100 sticky top-0 left-0 z-10 hidden h-12 w-screen flex-row px-4 md:flex">
+    <nav className="bg-base-100 sticky top-0 left-0 z-10 hidden h-12 w-screen flex-row items-center px-4 md:flex">
       <div className="mr-4 flex flex-row items-center">
         <Logo />
       </div>
@@ -122,6 +123,7 @@ export function DesktopNavbar() {
       <ul className="flex flex-row items-center gap-4">
         <NavIcons />
       </ul>
+      <LanguageDropDown />
     </nav>
   );
 }
