@@ -9,8 +9,8 @@ import React from "react";
 
 const masters = [
   {
-    image: "draft/masters/master_5.avif",
-    on_hover_image: "draft/masters/master_5_on_hover.avif",
+    image: "/draft/masters/master_5.avif",
+    on_hover_image: "/draft/masters/master_5_on_hover.avif",
     name: "Viviana",
     craft: "Tango Argentino",
     city: "Buenos Aires",
@@ -19,8 +19,8 @@ const masters = [
     days: 3,
   },
   {
-    image: "draft/masters/master_6.avif",
-    on_hover_image: "draft/masters/master_6_on_hover.avif",
+    image: "/draft/masters/master_6.avif",
+    on_hover_image: "/draft/masters/master_6_on_hover.avif",
     name: "Chikako",
     craft: "Caligrafía Japonesa",
     city: "Japon",
@@ -29,8 +29,8 @@ const masters = [
     days: 3,
   },
   {
-    image: "draft/masters/master_7.avif",
-    on_hover_image: "draft/masters/master_7_on_hover.avif",
+    image: "/draft/masters/master_7.avif",
+    on_hover_image: "/draft/masters/master_7_on_hover.avif",
     name: "Pum Pum",
     craft: "Arte Callejero",
     city: "Argentina",
@@ -38,8 +38,8 @@ const masters = [
     price: 885,
     days: 3,
   }, {
-    image: "draft/masters/master_8.avif",
-    on_hover_image: "draft/masters/master_8_on_hover.avif",
+    image: "/draft/masters/master_8.avif",
+    on_hover_image: "/draft/masters/master_8_on_hover.avif",
     name: "Takaoka",
     craft: "Encerado Tradicional",
     city: "Japon",
@@ -48,8 +48,8 @@ const masters = [
     days: 3,
   },
   {
-    image: "draft/masters/master_9.avif",
-    on_hover_image: "draft/masters/master_9_on_hover.avif",
+    image: "/draft/masters/master_9.avif",
+    on_hover_image: "/draft/masters/master_9_on_hover.avif",
     name: "Takaoka",
     craft: "Encerado Tradicional",
     city: "Japon",
@@ -58,8 +58,8 @@ const masters = [
     days: 3,
   },
   {
-    image: "draft/masters/master_10.avif",
-    on_hover_image: "draft/masters/master_10_on_hover.avif",
+    image: "/draft/masters/master_10.avif",
+    on_hover_image: "/draft/masters/master_10_on_hover.avif",
     name: "Takaoka",
     craft: "Encerado Tradicional",
     city: "Japon",

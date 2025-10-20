@@ -17,10 +17,10 @@ export default function Navbar() {
 function NavLinks() {
   // prettier-ignore
   return <>
-    <li><NavLink href="masters" text="Maestros" /></li>
-    <li><NavLink href="experiences" text="Experiencias" /></li>
-    <li><NavLink href="us" text="Nosotros" /></li>
-    <li><NavLink href="contact" text="Contacto" /></li>
+    <li><NavLink href="/masters" text="Maestros" /></li>
+    <li><NavLink href="/experiences" text="Experiencias" /></li>
+    <li><NavLink href="/us" text="Nosotros" /></li>
+    <li><NavLink href="/contact" text="Contacto" /></li>
   </>
 }
 

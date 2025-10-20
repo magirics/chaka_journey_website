@@ -1,5 +1,6 @@
 import CommentsChat from "@/ui/CommentsChat";
 import MasterCarousel from "@/ui/MasterCarousel";
+import { useTranslations } from "next-intl";
 
 const experienceCarouselItems = [
   {
@@ -44,11 +45,15 @@ const chatCommentsItems = [
 ]
 
 export default function Home() {
+  const t = useTranslations('Home');
+
+  const title = t('title')
+
   return (
     <>
       <div className="mb-8 flex h-[70vh] w-screen flex-col justify-center bg-[url('/draft/home/hero_top.jpg')]">
         <div className="text-primary-content relative ml-[10vw] flex w-80 flex-col text-center">
-          <h1 className="text-5xl">EXPERIENCIAS INOLVIDABLES CON UN MAESTRO</h1>
+          <h1 className="text-5xl">{title}</h1>
           <h2 className="mb-6 w-70 text-right">
             Reserva unos dias con un maestro experto en aun arte unico. Yay o
             nah?

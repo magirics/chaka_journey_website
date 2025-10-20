@@ -2,8 +2,8 @@ import MasterCard from "./MasterCard";
 
 const masters = [
   {
-    image: "draft/masters/master_1.avif",
-    on_hover_image: "draft/masters/master_1_on_hover.avif",
+    image: "/draft/masters/master_1.avif",
+    on_hover_image: "/draft/masters/master_1_on_hover.avif",
     name: "Viviana",
     craft: "Tango Argentino",
     city: "Buenos Aires",
@@ -12,8 +12,8 @@ const masters = [
     days: 3,
   },
   {
-    image: "draft/masters/master_2.avif",
-    on_hover_image: "draft/masters/master_2_on_hover.avif",
+    image: "/draft/masters/master_2.avif",
+    on_hover_image: "/draft/masters/master_2_on_hover.avif",
     name: "Chikako",
     craft: "Caligrafía Japonesa",
     city: "Japon",
@@ -22,8 +22,8 @@ const masters = [
     days: 3,
   },
   {
-    image: "draft/masters/master_3.avif",
-    on_hover_image: "draft/masters/master_3_on_hover.avif",
+    image: "/draft/masters/master_3.avif",
+    on_hover_image: "/draft/masters/master_3_on_hover.avif",
     name: "Pum Pum",
     craft: "Arte Callejero",
     city: "Argentina",
@@ -32,8 +32,8 @@ const masters = [
     days: 3,
   },
   {
-    image: "draft/masters/master_4.avif",
-    on_hover_image: "draft/masters/master_4_on_hover.avif",
+    image: "/draft/masters/master_4.avif",
+    on_hover_image: "/draft/masters/master_4_on_hover.avif",
     name: "Takaoka",
     craft: "Encerado Tradicional",
     city: "Japon",
