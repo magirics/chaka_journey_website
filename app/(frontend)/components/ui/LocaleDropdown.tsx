@@ -26,10 +26,8 @@ const locales = [
 const defaultLocale = { label: 'English', code: 'en' }
 
 export default function LocaleDropdown() {
-    const locale = useLocale()
-    const pathname = usePathname()
-    console.log(pathname)
-
+    const locale = useLocale();
+    const pathname = usePathname();
 
     return <div className="dropdown dropdown-hover dropdown-end">
         <div tabIndex={0} role="button" className="btn btn-ghost btn-sm mx-2 rounded-field">

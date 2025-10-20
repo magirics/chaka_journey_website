@@ -13,7 +13,6 @@ const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
   ...defaultConverters,
 
   "upload": ({ node }: { node: any }) => {
-    console.log(node)
     const url = node.value.url;
     const alt = node.value.alt;
     return (
@@ -27,7 +26,6 @@ export default async function Experience({ params }: { params: { id: string } })
   const { id } = await params;
   const response = await fetch(`http://localhost:3000/api/experiences/${id}`)
   const body = await response.json()
-  // console.log(body)
 
   const { user, master } = {
     user: {
