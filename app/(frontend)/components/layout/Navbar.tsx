@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Logo from "@/layout/Logo";
 import { MouseEventHandler, useState } from "react";
-import LanguageDropDown from "@/ui/LanguageDropdown";
+import LocaleDropdown from "@/ui/LocaleDropdown";
 
 export default function Navbar() {
   return (
@@ -123,7 +123,7 @@ export function DesktopNavbar() {
       <ul className="flex flex-row items-center gap-4">
         <NavIcons />
       </ul>
-      <LanguageDropDown />
+      <LocaleDropdown />
     </nav>
   );
 }
