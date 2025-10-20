@@ -1,3 +1,5 @@
+import { RichText } from '@payloadcms/richtext-lexical/react';
+
 const images = [
   "/draft/experiences/experience/image_1.avif",
   "/draft/experiences/experience/image_2.avif",
@@ -7,7 +9,26 @@ const images = [
   "/draft/experiences/experience/image_6.avif",
 ];
 
-export default function Experience() {
+const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
+  ...defaultConverters,
+
+  "upload": ({ node }: { node: any }) => {
+    console.log(node)
+    const url = node.value.url;
+    const alt = node.value.alt;
+    return (
+      <img src={url} alt={alt} width='100%' className="mx-auto my-1 max-w-150" />
+    );
+  },
+
+});
+
+export default async function Experience({ params }: { params: { id: string } }) {
+  const { id } = await params;
+  const response = await fetch(`http://localhost:3000/api/experiences/${id}`)
+  const body = await response.json()
+  // console.log(body)
+
   const { user, master } = {
     user: {
       name: "Samantha",
@@ -26,19 +47,12 @@ export default function Experience() {
     <>
       <main className="mx-8 my-16 md:w-160">
         <h1 className="text-5xl">{user.name}</h1>
+
         <small className="inline-block pb-4">
           {user.country} | con {master.name} en {master.country}
         </small>
 
-        <p className="pb-6">{text}</p>
-
-        <ul className="mx-auto flex max-w-150 flex-col gap-1">
-          {images.map((image) => (
-            <li key={image}>
-              <img src={image} />
-            </li>
-          ))}
-        </ul>
+        <RichText converters={jsxConverters} data={body.content} />
       </main>
     </>
   );
