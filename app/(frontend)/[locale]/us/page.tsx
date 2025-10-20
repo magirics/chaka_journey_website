@@ -1,4 +1,4 @@
-import PageTitle from "../components/ui/PageTitle";
+import PageTitle from "@/ui/PageTitle";
 
 const images = [
   "/draft/us/image (1).jpg",

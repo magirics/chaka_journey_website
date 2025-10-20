@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Logo from "./Logo";
+import Logo from "@/layout/Logo";
 import { MouseEventHandler, useState } from "react";
 import LanguageDropDown from "@/ui/LanguageDropdown";
 

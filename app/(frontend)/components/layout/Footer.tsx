@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { NavIcon } from "./Navbar";
+import { NavIcon } from "@/layout/Navbar";
 
 export default function Footer() {
   return (
