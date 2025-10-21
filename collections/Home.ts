@@ -1,7 +1,7 @@
 import { CollectionConfig } from "payload";
 
-export const Experiences: CollectionConfig = {
-    slug: "experiences",
+export const Home: CollectionConfig = {
+    slug: "home",
     access: {
         read: () => true,
         create: () => true,
@@ -9,7 +9,7 @@ export const Experiences: CollectionConfig = {
         delete: () => true,
     },
     fields: [
-        { name: "title", type: "text" },
-        { name: "content", type: "richText" },
+        { name: "version", type: "text" },
+        { name: "title", type: "text", localized: true },
     ],
 };

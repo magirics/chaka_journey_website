@@ -13,6 +13,7 @@ import { Media } from './collections/Media'
 import { Reserves } from './collections/Reserves'
 import { Masters } from './collections/Masters'
 import { Experiences } from './collections/Experiences'
+import { Home } from './collections/Home'
 
 dotenv.config()
 const filename = fileURLToPath(import.meta.url)
@@ -54,7 +55,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Reserves, Masters, Experiences],
+  collections: [Users, Media, Reserves, Masters, Experiences, Home],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
 
