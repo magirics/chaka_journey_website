@@ -36,7 +36,7 @@ const amount = checkoutSession.amount_total / 100;
 
 // 3️⃣ Crear la reserva en Payload
 const reserva = await payload.create({
-  collection: 'reservas',
+  collection: 'reserves',
   data: {
     stripeSessionId: sessionId,
     customerEmail,

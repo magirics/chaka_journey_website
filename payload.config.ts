@@ -10,8 +10,8 @@ import dotenv from 'dotenv'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
-import { Reservas } from './collections/Reservas'
-import { Maestros } from './collections/Maestros'
+import { Reserves } from './collections/Reserves'
+import { Masters } from './collections/Masters'
 import { Experiences } from './collections/Experiences'
 
 dotenv.config()
@@ -54,7 +54,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Reservas, Maestros, Experiences],
+  collections: [Users, Media, Reserves, Masters, Experiences],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
 

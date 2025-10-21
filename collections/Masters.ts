@@ -1,9 +1,9 @@
 import { CollectionConfig } from 'payload';
 
-export const Maestros: CollectionConfig = {
-  slug: 'maestros',
+export const Masters: CollectionConfig = {
+  slug: 'masters',
   admin: {
-    useAsTitle: 'nombreCompleto',
+    useAsTitle: 'name',
   },
   access: {
     read: () => true,
@@ -13,7 +13,7 @@ export const Maestros: CollectionConfig = {
   },
   fields: [
     {
-      name: 'nombreCompleto',
+      name: 'name',
       type: 'text',
       required: true,
       localized: true,
@@ -31,7 +31,7 @@ export const Maestros: CollectionConfig = {
       type: 'textarea',
     },
     {
-      name: 'especialidad',
+      name: 'specialty',
       type: 'text',
     },
     {
@@ -41,7 +41,7 @@ export const Maestros: CollectionConfig = {
     },
 
     {
-      name: 'activo',
+      name: 'active',
       type: 'checkbox',
       defaultValue: true,
     },

@@ -1,6 +1,6 @@
 import { CollectionConfig } from "payload";
-export const Reservas: CollectionConfig = {
-  slug: "reservas",
+export const Reserves: CollectionConfig = {
+  slug: "reserves",
   fields: [
     { name: "stripeSessionId", type: "text", required: true },
     { name: "customerEmail", type: "email" },
