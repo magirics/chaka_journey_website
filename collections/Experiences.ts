@@ -9,7 +9,9 @@ export const Experiences: CollectionConfig = {
         delete: () => true,
     },
     fields: [
-        { name: "title", type: "text" },
-        { name: "content", type: "richText" },
+        { name: "title", 
+        type: "text" },
+        { name: "content", 
+        type: "richText" },
     ],
 };
