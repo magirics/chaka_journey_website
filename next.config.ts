@@ -16,14 +16,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-         // Localhost dev
-        "localhost:3000",
-
-        // Codespaces / GitHub Dev (usa regex-like host wildcard)
-        "https://ominous-potato-p57p564r9q4299qv-3000.app.github.dev/",
-
-        // Producción
-        "https://miapp.com",
+        'localhost:3000', // codespace
+        '*.lhr.life',
       ],
     },
   },
@@ -31,6 +25,10 @@ const nextConfig: NextConfig = {
     PAYLOAD_SECRET: process.env.PAYLOAD_SECRET,
     DATABASE_URI: process.env.DATABASE_URI,
   },
+  allowedDevOrigins: [
+    'localhost:3000', // codespace
+    '*.lhr.life',
+  ],
 };
 
 const withNextIntl = createNextIntlPlugin();
