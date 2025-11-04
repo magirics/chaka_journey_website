@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
         "localhost:3000",
 
         // Codespaces / GitHub Dev (usa regex-like host wildcard)
-        "ominous-potato-p57p564r9q4299qv-3000.app.github.dev",
+        "https://ominous-potato-p57p564r9q4299qv-3000.app.github.dev/",
 
         // Producción
         "https://miapp.com",

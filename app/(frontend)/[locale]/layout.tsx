@@ -19,19 +19,20 @@ type Props = {
 };
 
 export default async function LocaleLayout({ children, params }: Props) {
-  const { locale } = await  params;
+  const { locale } = await params;
 
-  if (!hasLocale(routing.locales, locale)) {
-    notFound();
-  }
-
+  if (!hasLocale(routing.locales, locale)) notFound();
   const messages = await getMessages();
 
   return (
-<NextIntlClientProvider locale={locale} messages={messages}>
+    <html>
+      <body>
+    <NextIntlClientProvider locale={locale} messages={messages}>
       <Navbar />
       <main className="flex-grow">{children}</main>
       <Footer />
     </NextIntlClientProvider>
+    </body>
+    </html>
   );
 }

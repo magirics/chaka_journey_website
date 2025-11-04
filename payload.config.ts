@@ -27,6 +27,7 @@ interface ExtendedConfig extends Config {
 }
 
 export default buildConfig({
+
   localization: {
     locales: [
       {
@@ -54,6 +55,13 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+  /*  
+    cookies: {
+    sameSite: 'none',
+    secure: false,
+    domain: ".app.github.dev",
+    
+  },*/
   },
   collections: [Users, Media, Reserves, Masters, Experiences, Home],
   editor: lexicalEditor(),

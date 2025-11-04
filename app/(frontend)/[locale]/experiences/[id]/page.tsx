@@ -1,4 +1,6 @@
 import { RichText } from '@payloadcms/richtext-lexical/react';
+import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 
 const images = [
   "/draft/experiences/experience/image_1.avif",
@@ -9,6 +11,7 @@ const images = [
   "/draft/experiences/experience/image_6.avif",
 ];
 
+// Convierte los nodos del editor de Payload (RichText)
 const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
   ...defaultConverters,
 
@@ -22,36 +25,44 @@ const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
 
 });
 
-export default async function Experience({ params }: { params: { id: string } }) {
-  const { id } = await params;
-  const response = await fetch(`http://localhost:3000/api/experiences/${id}`)
-  const body = await response.json()
+// ✅ Nueva versión con soporte multilenguaje e i18n
+export default async function ExperiencePage({
+  params,
+}: {
+  params: { locale: string; id: string };
+}) {
+  const { locale, id } = params;
 
-  const { user, master } = {
-    user: {
-      name: "Samantha",
-      country: "Estados Unidos",
-    },
-    master: {
-      name: "Merlyn",
-      country: "Reino Unido",
-    },
-  };
+  // Fetch a la API de Payload (dinámico según locale)
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3000'}/api/experiences/${id}?locale=${locale}`,
+    { next: { revalidate: 60 } } // cache 1 minuto (opcional)
+  );
 
-  const text =
-    "I wanted to share a special learning experience in a medium that I love, printmaking, with one of my dearest and oldest friends, who never has time to do enough art making, but has so much to bring to it! It was very satisfying, and inspirational on a few levels: great to see a fully realized artist living her life, and pursuing her path as she uniquely has made for herself- and great to have her input on our own production, bringing her eye to bear on it. Very cool stuff!";
+  if (!res.ok) return notFound();
+  const body = await res.json();
+  const data = body?.doc || body;
+
+  // Si tu colección tiene campos `user` y `master` ya asociados, puedes extraerlos directamente:
+  const user = data?.user || { name: 'Samantha', country: 'Estados Unidos' };
+  const master = data?.master || { name: 'Merlyn', country: 'Reino Unido' };
+
+  // Si también defines traducciones globales en i18n, las puedes cargar así:
+  const t = await getTranslations( 'Experiences');
 
   return (
-    <>
-      <main className="mx-8 my-16 md:w-160">
-        <h1 className="text-5xl">{user.name}</h1>
+    <main className="mx-auto my-16 max-w-4xl px-4">
+      <h1 className="text-5xl font-semibold">{data?.title || user.name}</h1>
 
-        <small className="inline-block pb-4">
-          {user.country} | con {master.name} en {master.country}
-        </small>
+      <small className="inline-block pb-4 text-gray-500">
+        {user.country} | {t('with')} {master.name} {t('in')} {master.country}
+      </small>
 
-        <RichText converters={jsxConverters} data={body.content} />
-      </main>
-    </>
+      {data?.content ? (
+        <RichText converters={jsxConverters} data={data.content} />
+      ) : (
+        <p className="text-gray-600">{t('noContent')}</p>
+      )}
+    </main>
   );
 }
