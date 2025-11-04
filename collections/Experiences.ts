@@ -12,6 +12,8 @@ export const Experiences: CollectionConfig = {
         { name: "title", 
         type: "text" },
         { name: "content", 
-        type: "richText" },
+        type: "richText",
+        localized: true, // Guarda contenido por cada idioma
+        },
     ],
 };

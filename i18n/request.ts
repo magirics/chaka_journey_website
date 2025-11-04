@@ -18,7 +18,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
 async function get_messages(locale: string) {
     const results = await Promise.all([
-        await fetch(`http://localhost:3000/api/home?locale=${locale}&where[version][equals]=main`),
+        await fetch(`http://localhost:3000/api/home?locale=${locale}&where[version][equals]=main`), //se recibe todo desde Payload
         // await fetch(`http://localhost:3000/api/experiences?locale=${locale}&where[version][equals]=main`);
     ])
     const bodies = await Promise.all(results.map(async result => await result.json()))
