@@ -1,124 +1,98 @@
-import CommentsChat from "@/ui/CommentsChat";
-import MasterCarousel from "@/ui/MasterCarousel";
-import { useTranslations } from "next-intl";
+// app/(frontend)/[locale]/home/page.tsx
+import getRequestConfig from '../../../../i18n/request';
+import MasterCarousel from '@/ui/MasterCarousel';
+import Image from 'next/image';
 
-const experienceCarouselItems = [
-  {
-    image: "/draft/home/experience_card_1.avif",
-    text: "A once in a lifetime opportunity. To experience a new country and culture through the eyes of a local persona and artist is an experience to be treasured forever.",
-    master: {
-      craft: "Japanese Calligraphy",
-      city: "Kyoto",
-      country: "Japan",
-      name: "Chikako",
-    },
-    user: { name: "Katie" },
-  },
-  {
-    image: "/draft/home/experience_card_2.avif",
-    text: "A once in a lifetime opportunity. To experience a new country and culture through the eyes of a local persona and artist is an experience to be treasured forever.",
-    master: {
-      craft: "Japanese Calligraphy",
-      city: "Kyoto",
-      country: "Japan",
-      name: "Chikako",
-    },
-    user: { name: "Katie" },
-  },
-  {
-    image: "/draft/home/experience_card_3.avif",
-    text: "A once in a lifetime opportunity. To experience a new country and culture through the eyes of a local persona and artist is an experience to be treasured forever.",
-    master: {
-      craft: "Japanese Calligraphy",
-      city: "Kyoto",
-      country: "Japan",
-      name: "Chikako",
-    },
-    user: { name: "Katie" },
-  },
-];
+interface Props {
+  params: { locale: string };
+}
 
-const chatCommentsItems = [
-  { name: 'Dio Lupa', comment: '"Remaining Reason" became an instant hit, praised for its haunting sound and emotional depth. A viral performance brought it widespread recognition, making it one of Dio Lupa’s most iconic tracks.' },
-  { name: 'Ellie Beilish', comment: '"Bears of a Fever" captivated audiences with its intense energy and mysterious lyrics. Its popularity skyrocketed after fans shared it widely online, earning Ellie critical acclaim.' },
-  { name: 'Sabrino Gardener', comment: '"Cappuccino" quickly gained attention for its smooth melody and relatable themes. The song’s success propelled Sabrino into the spotlight, solidifying their status as a rising star.' },
-]
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const { messages } = await getRequestConfig({ requestLocale: Promise.resolve(locale) });
 
-export default function Home() {
-  const t = useTranslations('Home');
-
-  const title = t('title')
+  // Obtenemos el contenido del home desde los mensajes del locale actual
+  const home: any = (messages as any).Home || {};
+  const hero: any = home.hero || {};
+  const wideSections: any[] = home.wideSections || [];
+  const chunkyCards: any[] = home.chunkyCards || [];
+  const bottomHero: any = home.bottomHero || {};
 
   return (
     <>
-      <div className="mb-8 flex h-[70vh] w-screen flex-col justify-center bg-[url('/draft/home/hero_top.jpg')]">
-        <div className="text-primary-content relative ml-[10vw] flex w-80 flex-col text-center">
-          <h1 className="text-5xl">{title}</h1>
-          <h2 className="mb-6 w-70 text-right">
-            Reserva unos dias con un maestro experto en aun arte unico. Yay o
-            nah?
-          </h2>
-          <button className="btn btn-wide self-end">Explora</button>
-        </div>
-      </div>
+      {/* HERO */}
+      <section className="relative flex h-[90vh] w-full items-center justify-center overflow-hidden">
+        {hero?.backgroundImage && (
+          <img
+            src={hero.backgroundImage.url}
+            alt={hero.backgroundImage.alt || 'Hero background'}
+            className="absolute inset-0 w-full h-full object-cover opacity-70"
+          />
+        )}
 
+        <div className="relative z-10 flex flex-col items-center text-center text-white px-4">
+          <h1 className="text-5xl font-bold mb-4">{hero?.title}</h1>
+          <p className="mb-6 text-lg max-w-2xl">{hero?.subtitle}</p>
+
+          {hero?.buttonText && (
+            <button className="btn btn-wide btn-primary">
+              {hero.buttonText}
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* WIDE SECTIONS */}
       <div className="mb-8 flex flex-wrap justify-center gap-6">
-        <WideCarousel image="/draft/home/wide_1.jpg" text="Join Us Online" />
-        <WideCarousel image="/draft/home/wide_2.jpg" text="Follow The Rabbit" />
+        {wideSections.map((section, index) => (
+          <WideCarousel
+            key={index}
+            image={section.image?.url}
+            text={section.text}
+          />
+        ))}
       </div>
 
-      <div className="relative max-w-screen">
-        <div className="relative top-0 right-0 flex flex-col gap-4 overflow-x-scroll md:flex-row">
-          {experienceCarouselItems.map((experiece) => (
-            <ExperienceCard
-              key={experiece.image}
-              image={experiece.image}
-              master={experiece.master}
-              text={experiece.text}
-              user={experiece.user}
-            ></ExperienceCard>
-          ))}
-        </div>
-      </div>
-
+      {/* CHUNKY CARDS */}
       <div className="mb-8 flex flex-col gap-4">
-        <ChunkyCard
-          image="/draft/home/chunky_1.jpg"
-          title="Una nueva forma de viajar"
-          description="VAWAA is a mini-apprenticeship with a curated master artist or craftsman, tailored to your skill level."
-          link="How it Works"
-        />
-        <ChunkyCard
-          image="/draft/home/chunky_2.jpg"
-          title="A lifelong souvenir"
-          description="Whether it’s honing a passion or getting fresh inspiration, we see travel as an opportunity to grow."
-          link="Read guest stories"
-        />
+        {chunkyCards.map((card, index) => (
+          <ChunkyCard
+            key={index}
+            image={card.image?.url}
+            title={card.title}
+            description={card.description}
+            link={card.linkText}
+          />
+        ))}
       </div>
 
+      {/* MASTER CAROUSEL (mantenemos el mismo de antes) */}
       <div className="mb-8 px-6 md:w-screen">
         <MasterCarousel />
       </div>
 
-      <CommentsChat items={chatCommentsItems} />
-
-      <div className="mb-10 flex flex-col items-center gap-4">
-        <img src="/draft/home/hero_bottom.jpg" />
-        <h2 className="w-70 text-center text-2xl">
-          Rekindle your crush on the world. Book a VAWAA today.
-        </h2>
-        <button className="btn btn-neutral">Busca a tu maestro</button>
-      </div>
+      {/* BOTTOM HERO */}
+      {bottomHero && (
+        <div className="mb-10 flex flex-col items-center gap-4">
+          {bottomHero.image?.url && (
+            <img
+              src={bottomHero.image.url}
+              alt={bottomHero.image.alt || 'Bottom hero image'}
+            />
+          )}
+          <h2 className="w-70 text-center text-2xl">{bottomHero.text}</h2>
+          {bottomHero.buttonText && (
+            <button className="btn btn-neutral">{bottomHero.buttonText}</button>
+          )}
+        </div>
+      )}
     </>
   );
 }
 
-/*
-  Thick
-  Big
-  Overlap
-  Like MasterCard
-*/
+/* ——————————————————————————
+  COMPONENTES REUTILIZADOS
+—————————————————————————— */
 
 type WideCarouselProps = {
   image: string;
@@ -155,32 +129,6 @@ function ChunkyCard({ image, title, description, link }: ChunkyCardProps) {
         <h3 className="mb-4 text-3xl">{title}</h3>
         <p className="mb-8">{description}</p>
         <a className="underline decoration-0 underline-offset-4">{link}</a>
-      </div>
-    </div>
-  );
-}
-
-type ExperienceCardProps = {
-  image: string;
-  text: string;
-  master: { name: string; craft: string; city: string; country: string };
-  user: { name: string };
-};
-
-function ExperienceCard({ image, text, master, user }: ExperienceCardProps) {
-  return (
-    <div className="relative flex flex-col items-center md:min-w-200">
-      <div>
-        <img src={image}></img>
-      </div>
-      <div className="bg-primary-content relative flex flex-col items-center p-8 md:-top-10 md:w-4/5">
-        <p className="pb-8">{text}</p>
-        <span className="text-sm font-semibold">
-          {user.name} and {master.name}
-        </span>
-        <span className="text-sm">
-          {master.craft} - {master.city}, {master.country}
-        </span>
       </div>
     </div>
   );

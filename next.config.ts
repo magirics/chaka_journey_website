@@ -29,6 +29,19 @@ const nextConfig: NextConfig = {
     'localhost:3000', // codespace
     '*.lhr.life',
   ],
+
+ images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.app.github.dev', // 🔥 Permite cualquier subdominio de Codespaces
+      },
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+      },
+    ],
+  },
 };
 
 const withNextIntl = createNextIntlPlugin();
