@@ -26,13 +26,13 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html>
-      <body>
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <Navbar />
-      <main className="flex-grow">{children}</main>
-      <Footer />
-    </NextIntlClientProvider>
-    </body>
+      <body className="flex min-h-screen w-screen flex-col">
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Navbar />
+          <main className="mx-auto flex max-w-250 grow flex-col items-center">{children}</main>
+          <Footer />
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }
