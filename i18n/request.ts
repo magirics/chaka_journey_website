@@ -18,7 +18,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
 async function get_messages(locale: string) {
     const results = await Promise.all([
-        await fetch(`http://localhost:3000/api/home?locale=${locale}`), //se recibe todo desde Payload
+        await fetch(`http://localhost:3000/api/home?locale=${locale}&where[version][equals]=main`),
+     //   await fetch(`http://localhost:3000/api/featured-experiences?locale=${locale}&where[version][equals]=main`),
+       // await fetch(`http://localhost:3000/api/comments?locale=${locale}&where[version][equals]=main`)
         // await fetch(`http://localhost:3000/api/experiences?locale=${locale}&where[version][equals]=main`);
        // fetch(`${process.env.NEXT_PUBLIC_CMS_URL}/api/home?locale=${locale}`)
 
@@ -28,7 +30,9 @@ async function get_messages(locale: string) {
 
     const page = {
         'Home': pages[0],
-        // 'Experiences': pages[1]
+        //Experiences: pages[1],
+   //     Comments: pages[2]
+        
     }
 
     return page;

@@ -9,6 +9,8 @@ export const Home: CollectionConfig = {
     delete: () => true,
   },
   fields: [
+    { name: "version", 
+	        type: "text" },
     {
       name: "hero",
       type: "group",
@@ -87,6 +89,39 @@ export const Home: CollectionConfig = {
           type: "text",
           localized: true,
         },
+      ],
+    },
+{
+      name: "experiences",
+      type: "array",
+      fields: [
+        { name: "image", type: "upload", relationTo: "media" },
+        { name: "text", type: "textarea", localized: true },
+        {
+          name: "master",
+          type: "group",
+          fields: [
+            { name: "name", type: "text" },
+            { name: "craft", type: "text" },
+            { name: "city", type: "text" },
+            { name: "country", type: "text" },
+          ],
+        },
+        {
+          name: "user",
+          type: "group",
+          fields: [
+            { name: "name", type: "text" },
+          ],
+        },
+      ],
+    },
+    {
+      name: "comments",
+      type: "array",
+      fields: [
+        { name: "name", type: "text" },
+        { name: "comment", type: "textarea", localized: true },
       ],
     },
 

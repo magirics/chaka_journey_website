@@ -1,64 +1,66 @@
-// app/(frontend)/[locale]/home/page.tsx
-import getRequestConfig from '../../../../i18n/request';
-import MasterCarousel from '@/ui/MasterCarousel';
-import Image from 'next/image';
+import CommentsChat from "@/ui/CommentsChat";
+import MasterCarousel from "@/ui/MasterCarousel";
+import { useMessages } from "next-intl";
 
-interface Props {
-  params: { locale: string };
-}
+export default function Home() {
+  const messages = useMessages();
+  const home = messages?.Home;
 
-export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  const { messages } = await getRequestConfig({ requestLocale: Promise.resolve(locale) });
-
-  // Obtenemos el contenido del home desde los mensajes del locale actual
-  const home: any = (messages as any).Home || {};
-  const hero: any = home.hero || {};
-  const wideSections: any[] = home.wideSections || [];
-  const chunkyCards: any[] = home.chunkyCards || [];
-  const bottomHero: any = home.bottomHero || {};
+  const hero = home?.hero || {};
+  const wideSections = home?.wideSections || [];
+  const chunkyCards = home?.chunkyCards || [];
+  const experienceCarouselItems = home?.experiences || [];
+  const chatCommentsItems = home?.comments || [];
+  const bottomHero = home?.bottomHero || {};
 
   return (
     <>
-      {/* HERO */}
-      <section className="relative flex h-[90vh] w-full items-center justify-center overflow-hidden">
-        {hero?.backgroundImage && (
-          <img
-            src={hero.backgroundImage.url}
-            alt={hero.backgroundImage.alt || 'Hero background'}
-            className="absolute inset-0 w-full h-full object-cover opacity-70"
-          />
-        )}
-
-        <div className="relative z-10 flex flex-col items-center text-center text-white px-4">
-          <h1 className="text-5xl font-bold mb-4">{hero?.title}</h1>
-          <p className="mb-6 text-lg max-w-2xl">{hero?.subtitle}</p>
-
-          {hero?.buttonText && (
-            <button className="btn btn-wide btn-primary">
-              {hero.buttonText}
-            </button>
-          )}
+      {/* Hero principal */}
+      <div
+        className="mb-8 flex h-[70vh] w-screen flex-col justify-center bg-cover bg-center"
+        style={{
+          backgroundImage: `url(${hero.backgroundImage?.url || "/fallback.jpg"})`,
+        }}
+      >
+        <div className="text-primary-content relative ml-[10vw] flex w-80 flex-col text-center">
+          <h1 className="text-5xl">{hero.title}</h1>
+          <h2 className="mb-6 w-70 text-right">{hero.subtitle}</h2>
+          <button className="btn btn-wide self-end">{hero.buttonText}</button>
         </div>
-      </section>
+      </div>
 
-      {/* WIDE SECTIONS */}
+      {/* Secciones anchas */}
       <div className="mb-8 flex flex-wrap justify-center gap-6">
         {wideSections.map((section, index) => (
           <WideCarousel
-            key={index}
-            image={section.image?.url}
+            key={section.image?.id || index}
+            image={section.image?.url || "/fallback.jpg"}
             text={section.text}
           />
         ))}
       </div>
 
-      {/* CHUNKY CARDS */}
+      {/* Carrusel de experiencias */}
+      <div className="relative max-w-screen">
+        <div className="relative top-0 right-0 flex flex-col gap-4 overflow-x-scroll md:flex-row">
+          {experienceCarouselItems.map((experience, index) => (
+            <ExperienceCard
+              key={experience.image?.id || index}
+              image={experience.image?.url || "/fallback.jpg"}
+              master={experience.master}
+              text={experience.text}
+              user={experience.user}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Tarjetas gruesas */}
       <div className="mb-8 flex flex-col gap-4">
         {chunkyCards.map((card, index) => (
           <ChunkyCard
-            key={index}
-            image={card.image?.url}
+            key={card.image?.id || index}
+            image={card.image?.url || "/fallback.jpg"}
             title={card.title}
             description={card.description}
             link={card.linkText}
@@ -66,33 +68,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         ))}
       </div>
 
-      {/* MASTER CAROUSEL (mantenemos el mismo de antes) */}
+      {/* Carrusel de maestros */}
       <div className="mb-8 px-6 md:w-screen">
         <MasterCarousel />
       </div>
 
-      {/* BOTTOM HERO */}
-      {bottomHero && (
-        <div className="mb-10 flex flex-col items-center gap-4">
-          {bottomHero.image?.url && (
-            <img
-              src={bottomHero.image.url}
-              alt={bottomHero.image.alt || 'Bottom hero image'}
-            />
-          )}
-          <h2 className="w-70 text-center text-2xl">{bottomHero.text}</h2>
-          {bottomHero.buttonText && (
-            <button className="btn btn-neutral">{bottomHero.buttonText}</button>
-          )}
-        </div>
-      )}
+      {/* Comentarios */}
+      <CommentsChat items={chatCommentsItems} />
+
+      {/* Hero inferior */}
+      <div className="mb-10 flex flex-col items-center gap-4">
+        <img src={bottomHero.image?.url || "/fallback.jpg"} />
+        <h2 className="w-70 text-center text-2xl">{bottomHero.text}</h2>
+        <button className="btn btn-neutral">{bottomHero.buttonText}</button>
+      </div>
     </>
   );
 }
 
-/* ——————————————————————————
-  COMPONENTES REUTILIZADOS
-—————————————————————————— */
+// COMPONENTES LOCALES
 
 type WideCarouselProps = {
   image: string;
@@ -129,6 +123,33 @@ function ChunkyCard({ image, title, description, link }: ChunkyCardProps) {
         <h3 className="mb-4 text-3xl">{title}</h3>
         <p className="mb-8">{description}</p>
         <a className="underline decoration-0 underline-offset-4">{link}</a>
+      </div>
+    </div>
+  );
+}
+//Tarjeta de Experiencias
+type ExperienceCardProps = {
+  image: string;
+  text: string;
+  master: { name: string; craft: string; city: string; country: string };
+  user: { name: string };
+};
+
+
+function ExperienceCard({ image, text, master, user }: ExperienceCardProps) {
+  return (
+    <div className="relative flex flex-col items-center md:min-w-200">
+      <div>
+        <img src={image} />
+      </div>
+      <div className="bg-primary-content relative flex flex-col items-center p-8 md:-top-10 md:w-4/5">
+        <p className="pb-8">{text}</p>
+        <span className="text-sm font-semibold">
+          {user.name} and {master.name}
+        </span>
+        <span className="text-sm">
+          {master.craft} - {master.city}, {master.country}
+        </span>
       </div>
     </div>
   );
