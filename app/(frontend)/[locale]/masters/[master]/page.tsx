@@ -3,8 +3,11 @@
 import Lazy from "@/Lazy";
 import Calendar from "@/ui/Calendar";
 import Pricing from "@/ui/Pricing";
+import { useState } from "react";
 
 export default function Master() {
+  const [value, setValue] = useState("")
+
   const { name, craft, city, country, hours, days, price } = {
     name: "Viviana",
     craft: "Tango Argentino",
@@ -15,9 +18,10 @@ export default function Master() {
     price: 1200,
   };
 
-  const handleReserve = () => {
-    console.log("Reservar con Viviana");
-  };
+  const handleReserve = () => document.getElementById('id_reserve_button').showModal()
+  const handlePay = (range) => {
+    console.log(range)
+  }
 
   const overview =
     "Apasionarse mientras te expresas a través del tango en las calles de Buenos Aires junto a la maestra de tango Viviana. Experimente la vida cotidiana en la capital mundial del tango, luego pase sus noches bailando en las milongas de la ciudad. Realmente no hay nada como experimentar el tango en esta vibrante ciudad.";
@@ -68,6 +72,7 @@ export default function Master() {
               maxGuests={4}
               onReserve={handleReserve}
             />
+            <ReserveDialog onPay={handlePay} />
           </div>
         </div>
 
@@ -92,7 +97,7 @@ export default function Master() {
         <h2 className="mb-2 text-2xl">Reservación</h2>
         <div className="mb-8 flex justify-center">
           <Lazy>
-            <Calendar />
+            <Calendar value={value} setValue={setValue} />
           </Lazy>
         </div>
       </main>
@@ -123,4 +128,22 @@ function Tiles() {
       <img src="/draft/masters/master/tile_8.avif" />
     </div>
   );
+}
+
+function ReserveDialog({ onPay }) {
+  const [value, setValue] = useState("")
+
+  return <dialog id="id_reserve_button" className="modal">
+    <div className="modal-box rounded-none min-w-160 flex flex-col">
+      <h3 className="font-bold text-lg">Selecciona los dias de tu estancia</h3>
+      <div className="flex justify-center">
+        <Calendar value={value} setValue={setValue} />
+      </div>
+      <button className="btn btn-primary w-30 self-end" onClick={() => onPay(value)}>Pagar</button>
+    </div>
+
+    <form method="dialog" className="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 }

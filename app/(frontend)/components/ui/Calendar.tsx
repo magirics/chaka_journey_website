@@ -1,11 +1,30 @@
 "use client";
 
 import "cally";
+import { useEffect, useRef, useState } from "react";
 
-export default function Calendar() {
+const reserved = [
+  [new Date(2025, 11, 26), new Date(2025, 11, 28)],
+  [new Date(2025, 12, 1), new Date(2025, 12, 3)],
+  [new Date(2025, 12, 5), new Date(2025, 12, 7)],
+]
+
+export default function Calendar({ value, setValue }) {
+  const onChange = (e) => setValue(e.target.value)
+
+  const isDateDisallowed = (date: Date) => reserved.some(([start, end]) => start <= date && date <= end)
+  const getDayParts = (date: Date): string => isDateDisallowed(date) ? "disallowed" : "";
+
   return (
     <div className="inline-block p-6">
-      <calendar-range months={2}>
+      <style>
+        {`calendar-range calendar-month::part(disallowed) {
+          color: #ccc;
+          background-color: #f9f9f9;
+          cursor: not-allowed;
+        }`}
+      </style>
+      <calendar-range months={2} value={value} onchange={onChange} isDateDisallowed={isDateDisallowed} getDayParts={getDayParts}>
         <svg
           aria-label="Previous"
           slot="previous"
