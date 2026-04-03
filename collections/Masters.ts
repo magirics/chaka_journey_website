@@ -63,6 +63,23 @@ export const Masters: CollectionConfig = {
       type: 'number',
       required: true,
     },
+      {
+      name: "availability",
+      type: "array",
+      fields: [
+        {
+          name: "from",
+          type: "date",
+          required: true,
+        },
+        {
+          name: "to",
+          type: "date",
+          required: true,
+        }
+      ]
+    }
+,
     {
       name: 'city', // Ciudad del taller
       type: 'text',

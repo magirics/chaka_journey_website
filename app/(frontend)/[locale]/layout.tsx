@@ -1,4 +1,3 @@
-// app/(frontend)/[locale]/layout.tsx
 import type { Metadata } from "next";
 import "../../globals.css";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
 
 type Props = {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 };
 
 export default async function LocaleLayout({ children, params }: Props) {
@@ -25,14 +24,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html>
-      <body className="flex min-h-screen w-screen flex-col">
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <Navbar />
-          <main className="mx-auto flex max-w-250 grow flex-col items-center">{children}</main>
-          <Footer />
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <Navbar />
+      <main className="mx-auto flex max-w-250 grow flex-col items-center">{children}</main>
+      <Footer />
+    </NextIntlClientProvider>
   );
 }

@@ -4,6 +4,7 @@ import Lazy from "@/Lazy";
 import Calendar from "@/ui/Calendar";
 import Pricing from "@/ui/Pricing";
 import { useState } from "react";
+import { useParams } from 'next/navigation';
 
 export default function Master() {
   const [value, setValue] = useState("")
@@ -18,9 +19,43 @@ export default function Master() {
     price: 1200,
   };
 
-  const handleReserve = () => document.getElementById('id_reserve_button').showModal()
-  const handlePay = (range) => {
-    console.log(range)
+  const params = useParams();
+  const masterIdFromParams = params?.master;
+
+  const handleReserve = () => {
+    const dlg = document.getElementById('id_reserve_button') as HTMLDialogElement | null;
+    dlg?.showModal();
+  }
+  const handlePay = async (range: string) => {
+    console.log('Selected range', range)
+    let startDate = null; let endDate = null;
+    if (typeof range === 'string') {
+      if (range.includes('/')) {
+        [startDate, endDate] = range.split('/');
+      } else if (range.includes(',')) {
+        [startDate, endDate] = range.split(',').map(s => s.trim());
+      } else {
+        startDate = endDate = range;
+      }
+    }
+
+    const masterId = masterIdFromParams || 'unknown-master';
+
+    const res = await fetch('/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        price,
+        days,
+        masterId,
+        startDate,
+        endDate,
+      }),
+    });
+    const data = await res.json();
+    if (data?.url) window.location.href = data.url;
+    else console.error('Error en checkout', data);
   }
 
   const overview =
@@ -130,7 +165,7 @@ function Tiles() {
   );
 }
 
-function ReserveDialog({ onPay }) {
+function ReserveDialog({ onPay }: { onPay: (range: string) => void }) {
   const [value, setValue] = useState("")
 
   return <dialog id="id_reserve_button" className="modal">

@@ -1,7 +1,8 @@
 import { getRequestConfig } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { routing } from './routing';
-import { cookies, headers } from 'next/headers';
+
+const apiBaseUrls = resolveApiBaseUrls();
 
 export default getRequestConfig(async ({ requestLocale }) => {
     // Typically corresponds to the `[locale]` segment
@@ -17,23 +18,81 @@ export default getRequestConfig(async ({ requestLocale }) => {
 });
 
 async function get_messages(locale: string) {
-    const results = await Promise.all([
-        await fetch(`http://localhost:3000/api/home?locale=${locale}&where[version][equals]=main`),
-     //   await fetch(`http://localhost:3000/api/featured-experiences?locale=${locale}&where[version][equals]=main`),
-       // await fetch(`http://localhost:3000/api/comments?locale=${locale}&where[version][equals]=main`)
-        // await fetch(`http://localhost:3000/api/experiences?locale=${locale}&where[version][equals]=main`);
-       // fetch(`${process.env.NEXT_PUBLIC_CMS_URL}/api/home?locale=${locale}`)
-
-    ])
-    const bodies = await Promise.all(results.map(async result => await result.json()))
-    const pages = bodies.map(body => body.docs[0])
+    const [homePage, headerContent, footerContent] = await Promise.all([
+        fetchCollectionFirstDoc(
+            `home?locale=${encodeURIComponent(locale)}&where[version][equals]=main`
+        ),
+        fetchCollectionFirstDoc(
+            `header?locale=${encodeURIComponent(locale)}&where[version][equals]=main`
+        ),
+        fetchCollectionFirstDoc(
+            `footer?locale=${encodeURIComponent(locale)}&where[version][equals]=main`
+        ),
+    ]);
 
     const page = {
-        'Home': pages[0],
+        Home: homePage,
+        Header: headerContent,
+        Footer: footerContent,
         //Experiences: pages[1],
    //     Comments: pages[2]
         
+    };
+
+    return page as Record<string, unknown>;
+}
+
+async function fetchCollectionFirstDoc(query: string) {
+    try {
+        return await Promise.any(
+            apiBaseUrls.map((baseUrl) => fetchDocFromBaseUrl(baseUrl, query))
+        );
+    } catch {
+        return {};
+    }
+}
+
+async function fetchDocFromBaseUrl(baseUrl: string, query: string) {
+    const res = await fetch(`${baseUrl}/api/${query}`, {
+        next: { revalidate: 120 },
+        signal: AbortSignal.timeout(4500),
+    });
+
+    if (!res.ok) {
+        throw new Error(`Non-OK response from ${baseUrl}`);
     }
 
-    return page;
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+        throw new Error(`Invalid content type from ${baseUrl}`);
+    }
+
+    const body = await res.json();
+    return body?.docs?.[0] || {};
+}
+
+function resolveApiBaseUrls() {
+    const candidates = [
+        process.env.NEXT_PUBLIC_APP_URL,
+        process.env.PAYLOAD_PUBLIC_SERVER_URL,
+        process.env.NEXT_PUBLIC_PAYLOAD_URL,
+        'http://127.0.0.1:3000',
+    ];
+
+    const normalizedCandidates = new Set<string>();
+
+    for (const candidate of candidates) {
+        if (!candidate) continue;
+
+        try {
+            const normalized = candidate.startsWith('http')
+                ? candidate
+                : `http://${candidate}`;
+            normalizedCandidates.add(new URL(normalized).origin);
+        } catch {
+            // Try next candidate
+        }
+    }
+
+    return Array.from(normalizedCandidates);
 }

@@ -9,8 +9,8 @@ const reserved = [
   [new Date(2025, 12, 5), new Date(2025, 12, 7)],
 ]
 
-export default function Calendar({ value, setValue }) {
-  const onChange = (e) => setValue(e.target.value)
+export default function Calendar({ value, setValue }: { value: string; setValue: (v: string) => void }) {
+  const onChange = (e: any) => setValue((e.target as HTMLInputElement).value)
 
   const isDateDisallowed = (date: Date) => reserved.some(([start, end]) => start <= date && date <= end)
   const getDayParts = (date: Date): string => isDateDisallowed(date) ? "disallowed" : "";

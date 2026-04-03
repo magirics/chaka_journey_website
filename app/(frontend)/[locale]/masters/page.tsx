@@ -9,6 +9,7 @@ import React from "react";
 
 const masters = [
   {
+    id: 'viviana',
     image: "/draft/masters/master_5.avif",
     on_hover_image: "/draft/masters/master_5_on_hover.avif",
     name: "Viviana",
@@ -19,6 +20,7 @@ const masters = [
     days: 3,
   },
   {
+    id: 'chikako',
     image: "/draft/masters/master_6.avif",
     on_hover_image: "/draft/masters/master_6_on_hover.avif",
     name: "Chikako",
@@ -29,6 +31,7 @@ const masters = [
     days: 3,
   },
   {
+    id: 'pum-pum',
     image: "/draft/masters/master_7.avif",
     on_hover_image: "/draft/masters/master_7_on_hover.avif",
     name: "Pum Pum",
@@ -38,6 +41,7 @@ const masters = [
     price: 885,
     days: 3,
   }, {
+    id: 'takaoka-1',
     image: "/draft/masters/master_8.avif",
     on_hover_image: "/draft/masters/master_8_on_hover.avif",
     name: "Takaoka",
@@ -48,6 +52,7 @@ const masters = [
     days: 3,
   },
   {
+    id: 'takaoka-2',
     image: "/draft/masters/master_9.avif",
     on_hover_image: "/draft/masters/master_9_on_hover.avif",
     name: "Takaoka",
@@ -58,6 +63,7 @@ const masters = [
     days: 3,
   },
   {
+    id: 'takaoka-3',
     image: "/draft/masters/master_10.avif",
     on_hover_image: "/draft/masters/master_10_on_hover.avif",
     name: "Takaoka",
@@ -83,6 +89,7 @@ export default function Masters() {
         name: master.name,
         price: master.price,
         days: master.days,
+        masterId: master.id || master.image,
       }),
     });
 

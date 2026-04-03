@@ -31,10 +31,32 @@ export async function fulfillCheckout(sessionId) {
     }
 
     // 🔹 Variables reutilizables
-const customerEmail = checkoutSession.customer_details.email;
-const amount = checkoutSession.amount_total / 100;
+    const customerEmail = checkoutSession.customer_details?.email;
+    const amount = checkoutSession.amount_total / 100;
+
+    // Intentar leer metadata enviada desde create-checkout-session
+    const masterId = checkoutSession.metadata?.masterId || null;
+    const startDate = checkoutSession.metadata?.startDate || null;
+    const endDate = checkoutSession.metadata?.endDate || null;
+
+    console.log('FulfillCheckout: metadata masterId, startDate, endDate:', masterId, startDate, endDate);
+
+    // Validación: si la lógica requiere master y fechas, abortamos si no están
+    if (!masterId || !startDate || !endDate) {
+      console.warn('FulfillCheckout: falta masterId/startDate/endDate en metadata; no se creará la reserva.');
+      return;
+    }
 
 // 3️⃣ Crear la reserva en Payload
+    console.log('FulfillCheckout: creando reserva en Payload con:', {
+      stripeSessionId: sessionId,
+      customerEmail,
+      amount,
+      masterId,
+      startDate,
+      endDate,
+      items: checkoutSession.line_items?.data?.map(i => ({ desc: i.description, qty: i.quantity })) || [],
+    });
 const reserva = await payload.create({
   collection: 'reserves',
   data: {
@@ -46,6 +68,9 @@ const reserva = await payload.create({
       description: item.description,
       quantity: item.quantity,
     })) || [],
+    ...(masterId ? { master: masterId } : {}),
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
   },
 });
 

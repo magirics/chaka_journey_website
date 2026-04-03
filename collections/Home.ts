@@ -53,6 +53,7 @@ export const Home: CollectionConfig = {
           name: "image",
           type: "upload",
           relationTo: "media",
+          localized: false,
         },
         {
           name: "text",
@@ -72,6 +73,7 @@ export const Home: CollectionConfig = {
           name: "image",
           type: "upload",
           relationTo: "media",
+          localized: false,
         },
         {
           name: "title",
@@ -95,16 +97,19 @@ export const Home: CollectionConfig = {
       name: "experiences",
       type: "array",
       fields: [
-        { name: "image", type: "upload", relationTo: "media" },
+        { name: "image", 
+          type: "upload", 
+          relationTo: "media", 
+          localized: false, },
         { name: "text", type: "textarea", localized: true },
         {
           name: "master",
           type: "group",
           fields: [
             { name: "name", type: "text" },
-            { name: "craft", type: "text" },
-            { name: "city", type: "text" },
-            { name: "country", type: "text" },
+            { name: "craft", type: "text", localized: true },
+            { name: "city", type: "text", localized: true },
+            { name: "country", type: "text", localized: true},
           ],
         },
         {
@@ -135,6 +140,7 @@ export const Home: CollectionConfig = {
           name: "image",
           type: "upload",
           relationTo: "media",
+          localized: false,
         },
         {
           name: "text",

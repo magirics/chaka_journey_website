@@ -1,15 +1,7 @@
 import { RichText } from '@payloadcms/richtext-lexical/react';
-import { getTranslations } from 'next-intl/server';
+import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-
-const images = [
-  "/draft/experiences/experience/image_1.avif",
-  "/draft/experiences/experience/image_2.avif",
-  "/draft/experiences/experience/image_3.avif",
-  "/draft/experiences/experience/image_4.avif",
-  "/draft/experiences/experience/image_5.avif",
-  "/draft/experiences/experience/image_6.avif",
-];
+import { experiencesCatalog } from '@/data/experiences';
 
 // Convierte los nodos del editor de Payload (RichText)
 const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
@@ -19,7 +11,12 @@ const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
     const url = node.value.url;
     const alt = node.value.alt;
     return (
-      <img src={url} alt={alt} width='100%' className="mx-auto my-1 max-w-150" />
+      <img
+        src={url}
+        alt={alt}
+        width="100%"
+        className="mx-auto mt-8 mb-2 w-full max-w-[980px] object-cover"
+      />
     );
   },
 
@@ -29,39 +26,111 @@ const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
 export default async function ExperiencePage({
   params,
 }: {
-  params: { locale: string; id: string };
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { locale, id } = params;
+  // Paralelizar los awaits para evitar problemas de Next.js con múltiples awaits
+  const [{ locale, id }, messages] = await Promise.all([
+    params,
+    getMessages().catch(() => ({})),
+  ]);
 
-  // Fetch a la API de Payload (dinámico según locale)
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3000'}/api/experiences/${id}?locale=${locale}`,
-    { next: { revalidate: 60 } } // cache 1 minuto (opcional)
+  const fallbackByLocale: Record<string, { with: string; in: string; noContent: string }> = {
+    es: { with: 'con', in: 'en', noContent: 'Sin contenido disponible.' },
+    en: { with: 'with', in: 'in', noContent: 'No content available.' },
+    fr: { with: 'avec', in: 'a', noContent: 'Aucun contenu disponible.' },
+    de: { with: 'mit', in: 'in', noContent: 'Kein Inhalt verfugbar.' },
+  };
+
+  const fallbackExperience = experiencesCatalog.find(
+    (experience) => experience.id === id
   );
+  const isNumericId = /^\d+$/.test(id);
 
-  if (!res.ok) return notFound();
-  const body = await res.json();
-  const data = body?.doc || body;
+  // Prioriza Payload: por ID numerico o por clave personalizada (key).
+  let data: any = null;
+  const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3000';
+  
+  try {
+    const url = isNumericId
+      ? `${baseUrl}/api/experiences/${id}?locale=${locale}&depth=1`
+      : `${baseUrl}/api/experiences?where[key][equals]=${encodeURIComponent(id)}&limit=1&locale=${locale}&depth=1`;
+
+    const res = await fetch(url, { next: { revalidate: 60 } });
+
+    if (res.ok) {
+      const body = await res.json();
+      data = isNumericId ? (body?.doc || body) : (body?.docs?.[0] || null);
+    }
+  } catch {
+    data = null;
+  }
+
+  if (!data && !fallbackExperience) return notFound();
 
   // Si tu colección tiene campos `user` y `master` ya asociados, puedes extraerlos directamente:
-  const user = data?.user || { name: 'Samantha', country: 'Estados Unidos' };
-  const master = data?.master || { name: 'Merlyn', country: 'Reino Unido' };
+  const user =
+    data?.user ||
+    fallbackExperience?.user || { name: 'Samantha', country: 'Estados Unidos' };
+  const master =
+    data?.master ||
+    fallbackExperience?.master || { name: 'Merlyn', country: 'Reino Unido' };
+  const craft =
+    data?.master?.craft ||
+    fallbackExperience?.master?.craft ||
+    '';
 
-  // Si también defines traducciones globales en i18n, las puedes cargar así:
-  const t = await getTranslations( 'Experiences');
+  // Si falta el namespace en mensajes, usamos fallback para evitar MISSING_MESSAGE.
+  const localeFallback = fallbackByLocale[locale] || fallbackByLocale.en;
+  const messagesObj = messages as Record<string, any>;
+  const tt = (key: 'with' | 'in' | 'noContent') =>
+    messagesObj?.Experiences?.[key] || localeFallback[key];
+
+  const detailTitle = user?.name || data?.title || fallbackExperience?.title;
+  const payloadImageUrl =
+    typeof data?.image === 'object' && data?.image?.url
+      ? data.image.url
+      : null;
+  const payloadImageAlt =
+    typeof data?.image === 'object' && typeof data?.image?.alt === 'string' && data.image.alt.trim()
+      ? data.image.alt
+      : detailTitle;
 
   return (
-    <main className="mx-auto my-16 max-w-4xl px-4">
-      <h1 className="text-5xl font-semibold">{data?.title || user.name}</h1>
+    <main className="mx-auto w-full max-w-[1200px] px-6 py-10 md:px-8 md:py-14">
+      <header className="max-w-[1020px]">
+        <h1 className="text-4xl font-semibold tracking-tight text-black md:text-5xl">
+          {detailTitle}
+        </h1>
+        <small className="mt-2 inline-block text-sm text-slate-500 md:text-base">
+          {user.country} | {craft} {tt('with')} {master.name}
+        </small>
+      </header>
 
-      <small className="inline-block pb-4 text-gray-500">
-        {user.country} | {t('with')} {master.name} {t('in')} {master.country}
-      </small>
+      {payloadImageUrl ? (
+        <img
+          src={payloadImageUrl}
+          alt={payloadImageAlt}
+          className="mx-auto mt-8 w-full max-w-[980px] object-cover"
+        />
+      ) : null}
 
       {data?.content ? (
-        <RichText converters={jsxConverters} data={data.content} />
+        <section className="mt-6 max-w-[1080px] text-[19px] leading-relaxed text-slate-900 [&_p]:mb-5 [&_strong]:font-semibold md:text-[20px]">
+          <RichText converters={jsxConverters} data={data.content} />
+        </section>
+      ) : fallbackExperience?.story?.length ? (
+        <section className="mt-6 max-w-[1080px] space-y-5 text-[19px] leading-relaxed text-slate-900 md:text-[20px]">
+          {fallbackExperience.story.map((paragraph, index) => (
+            <p key={`${fallbackExperience.id}-${index}`}>{paragraph}</p>
+          ))}
+          <img
+            src={fallbackExperience.image}
+            alt={fallbackExperience.title}
+            className="mx-auto mt-8 w-full max-w-[980px] object-cover"
+          />
+        </section>
       ) : (
-        <p className="text-gray-600">{t('noContent')}</p>
+        <p className="mt-6 text-lg text-slate-600">{tt('noContent')}</p>
       )}
     </main>
   );

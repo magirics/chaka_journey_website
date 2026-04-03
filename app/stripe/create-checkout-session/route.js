@@ -14,6 +14,7 @@ export async function POST(req) {
     const { name, price, days } = body;
 
     // 🔹 Crea la sesión en Stripe
+    console.log('CreateCheckoutSession: body payload', { name, price, days, masterId: body.masterId, startDate: body.startDate, endDate: body.endDate });
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
@@ -31,9 +32,15 @@ export async function POST(req) {
       ],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/stripe/success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/stripe/cancel`,
+      metadata: {
+        masterId: body.masterId || '',
+        startDate: body.startDate || '',
+        endDate: body.endDate || '',
+      },
     });
 
-    return NextResponse.json({ url: session.url });
+    console.log('CreateCheckoutSession: created session id', session.id);
+    return NextResponse.json({ url: session.url, id: session.id });
   } catch (err) {
     console.error("Stripe error:", err);
     return NextResponse.json(

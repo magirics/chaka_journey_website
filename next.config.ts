@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: [
         'localhost:3000', // codespace
+        '*.app.github.dev',
         '*.lhr.life',
       ],
     },
@@ -27,6 +28,7 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: [
     'localhost:3000', // codespace
+    '*.app.github.dev',
     '*.lhr.life',
   ],
 

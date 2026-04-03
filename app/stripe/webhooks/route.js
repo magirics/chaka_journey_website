@@ -12,12 +12,14 @@ export const config = {
 
   export async function POST(req) {
     let event;
+    console.log('Stripe webhook POST received:', req.method, req.url);
 
       // Obtén el raw body como ArrayBuffer
         const buf = await req.arrayBuffer();
           const signature = req.headers.get('stripe-signature');
 
             try {
+              console.log('Stripe webhook: signature header length:', signature ? signature.length : 'no signature');
                 event = stripe.webhooks.constructEvent(
                       Buffer.from(buf),
                             signature,
@@ -27,8 +29,10 @@ export const config = {
                                             console.error('❌ Error firma webhook:', err.message);
                                                 return NextResponse.json({ error: err.message }, { status: 400 });
                                                   }
-
+            
+            console.log('Stripe webhook: event constructed, type:', event.type);
                                                     if (event.type === 'checkout.session.completed') {
+                                                      console.log('Stripe webhook: checkout.session.completed detected');
                                                         const session = event.data.object;
                                                             try {
                                                                   console.log('🔔 Webhook recibido:', session.id);
