@@ -1,19 +1,62 @@
 "use client";
 
 import "cally";
-import { useEffect, useRef, useState } from "react";
 
-const reserved = [
-  [new Date(2025, 11, 26), new Date(2025, 11, 28)],
-  [new Date(2025, 12, 1), new Date(2025, 12, 3)],
-  [new Date(2025, 12, 5), new Date(2025, 12, 7)],
-]
+type AvailabilityRange = { from: string; to: string };
 
-export default function Calendar({ value, setValue }: { value: string; setValue: (v: string) => void }) {
-  const onChange = (e: any) => setValue((e.target as HTMLInputElement).value)
+function parseDateOnly(value: string): Date {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
 
-  const isDateDisallowed = (date: Date) => reserved.some(([start, end]) => start <= date && date <= end)
-  const getDayParts = (date: Date): string => isDateDisallowed(date) ? "disallowed" : "";
+function getUtcDayTime(date: Date): number {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+export default function Calendar({
+  value,
+  setValue,
+  availability,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  availability?: AvailabilityRange[];
+}) {
+  const onChange = (e: any) => setValue((e.target as HTMLInputElement).value);
+
+  const isWithinAvailability = (date: Date): boolean => {
+    if (!availability || availability.length === 0) return false;
+
+    const currentDay = getUtcDayTime(date);
+
+    return availability.some(({ from, to }) => {
+      const startDay = getUtcDayTime(parseDateOnly(from));
+      const endDay = getUtcDayTime(parseDateOnly(to));
+      return currentDay >= startDay && currentDay <= endDay;
+    });
+  };
+
+  const isDateDisallowed = (date: Date): boolean => {
+    const today = getUtcDayTime(new Date());
+    const currentDay = getUtcDayTime(date);
+
+    if (currentDay < today) return true;
+
+    if (availability && availability.length > 0) {
+      return !isWithinAvailability(date);
+    }
+
+    return false;
+  };
+
+  const getDayParts = (date: Date): string => {
+    const parts: string[] = [];
+
+    if (isDateDisallowed(date)) parts.push("disallowed");
+    if (isWithinAvailability(date)) parts.push("available");
+
+    return parts.join(" ");
+  };
 
   return (
     <div className="inline-block p-6">
@@ -22,6 +65,13 @@ export default function Calendar({ value, setValue }: { value: string; setValue:
           color: #ccc;
           background-color: #f9f9f9;
           cursor: not-allowed;
+        }
+
+        calendar-range calendar-month::part(available) {
+          background-color: #d8ead8;
+          color: #17351f;
+          font-weight: 600;
+          border-radius: 999px;
         }`}
       </style>
       <calendar-range months={2} value={value} onchange={onChange} isDateDisallowed={isDateDisallowed} getDayParts={getDayParts}>

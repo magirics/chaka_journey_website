@@ -3,24 +3,98 @@
 import Lazy from "@/Lazy";
 import Calendar from "@/ui/Calendar";
 import Pricing from "@/ui/Pricing";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from 'next/navigation';
+import { useLocale } from "next-intl";
+
+type PayloadMaster = {
+  id: number | string;
+  name?: string;
+  specialty?: string;
+  title?: string;
+  city?: string;
+  country?: string;
+  days?: number;
+  price?: number;
+  bio?: string;
+  image?: {
+    url?: string;
+  } | null;
+  availability?: Array<{ from: string; to: string }>;
+};
 
 export default function Master() {
   const [value, setValue] = useState("")
-
-  const { name, craft, city, country, hours, days, price } = {
-    name: "Viviana",
-    craft: "Tango Argentino",
-    city: "Buenos Aires",
-    country: "Argentina",
-    hours: 12,
-    days: 3,
-    price: 1200,
-  };
+  const [masterData, setMasterData] = useState<PayloadMaster | null>(null);
+  const locale = useLocale();
 
   const params = useParams();
-  const masterIdFromParams = params?.master;
+  const masterIdFromParams = Array.isArray(params?.master)
+    ? params.master[0]
+    : params?.master;
+
+  useEffect(() => {
+    if (!masterIdFromParams) return;
+
+    let isCancelled = false;
+
+    const fetchMaster = async () => {
+      try {
+        const numericId = /^\d+$/.test(String(masterIdFromParams));
+        const endpoint = numericId
+          ? `/api/masters/${masterIdFromParams}?locale=${encodeURIComponent(locale)}&depth=1`
+          : `/api/masters?where[key][equals]=${encodeURIComponent(String(masterIdFromParams))}&limit=1&locale=${encodeURIComponent(locale)}&depth=1`;
+
+        const res = await fetch(endpoint);
+        if (!res.ok) return;
+
+        const body = await res.json();
+        const doc = numericId ? body : body?.docs?.[0];
+
+        if (!isCancelled && doc) {
+          setMasterData(doc as PayloadMaster);
+        }
+      } catch {
+        // Keep fallback copy on fetch failure.
+      }
+    };
+
+    fetchMaster();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [locale, masterIdFromParams]);
+
+  const content = useMemo(() => {
+    const name = masterData?.name || "Master";
+    const craft = masterData?.specialty || masterData?.title || "Experiencia";
+    const city = masterData?.city || "";
+    const country = masterData?.country || "";
+    const days = typeof masterData?.days === "number" ? masterData.days : 3;
+    const price = typeof masterData?.price === "number" ? masterData.price : 1200;
+    const image =
+      typeof masterData?.image === "object" && masterData?.image?.url
+        ? masterData.image.url
+        : "/draft/masters/master/hero.avif";
+    const bio =
+      masterData?.bio ||
+      "Conoce al maestro y vive una experiencia curada en profundidad junto a Chaka Journey.";
+
+    const availability = Array.isArray(masterData?.availability) ? masterData.availability : [];
+
+    return {
+      name,
+      craft,
+      city,
+      country,
+      days,
+      price,
+      image,
+      bio,
+      availability,
+    };
+  }, [masterData]);
 
   const handleReserve = () => {
     const dlg = document.getElementById('id_reserve_button') as HTMLDialogElement | null;
@@ -39,15 +113,15 @@ export default function Master() {
       }
     }
 
-    const masterId = masterIdFromParams || 'unknown-master';
+    const masterId = masterIdFromParams || masterData?.id || 'unknown-master';
 
     const res = await fetch('/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
-        price,
-        days,
+        price: content.price,
+        days: content.days,
         masterId,
         startDate,
         endDate,
@@ -59,10 +133,10 @@ export default function Master() {
   }
 
   const overview =
-    "Apasionarse mientras te expresas a través del tango en las calles de Buenos Aires junto a la maestra de tango Viviana. Experimente la vida cotidiana en la capital mundial del tango, luego pase sus noches bailando en las milongas de la ciudad. Realmente no hay nada como experimentar el tango en esta vibrante ciudad.";
+    content.bio;
 
   const meet_the_master =
-    "Tango is in Viviana’s genes. Born and raised in Buenos Aires, mecca of tango, Viviana has been a tango instructor and performer since 1993. She has founded tango groups, taught classes, organized milongas and performed across Argentina, US and Europe. Between Argentine stage and social styles of tango, Viviana specializes in social tango. As a teacher, she is known to make this dance form accessible to a wide audience by distilling the essentials of tango. She focuses on connecting with one's own expression and discovering the relationship with others through a musical and emotional body language. As neuroscience suggests, she feels tango has the unique ability to produce large amounts of brain activity while maintaining a zen state of mind. It is sophisticated and challenging and can only be decrypted by getting immersed in Buenos Aires and understanding its culture, origin and constant evolution. Viviana’s passion will get you addicted to tango and Buenos Aires. She may even make you love Fernet!";
+    content.bio;
 
   const experience_includes = `
 ▪ Experiencing Viviana’s everyday life in Buenos Aires, the tango capital.
@@ -82,11 +156,11 @@ export default function Master() {
 
   return (
     <>
-      <Hero />
+      <Hero image={content.image} />
 
-      <main className="mx-8 md:w-200">
+      <main className="mx-auto w-full max-w-[1100px] px-6 md:px-8">
         <span>
-          {city}, {country} {hours} horas por {days} días
+          {content.city}, {content.country} {content.days} dias
         </span>
 
         <div className="divider" />
@@ -94,7 +168,7 @@ export default function Master() {
         <div className="space-x-16 md:flex">
           <div>
             <h1 className="mb-4 text-4xl">
-              {craft} con {name}
+              {content.craft} con {content.name}
             </h1>
             <p>{overview}</p>
           </div>
@@ -102,12 +176,12 @@ export default function Master() {
           <div>
             <div className="divider md:hidden" />
             <Pricing
-              price={price}
+              price={content.price}
               guestPrice={230}
               maxGuests={4}
               onReserve={handleReserve}
             />
-            <ReserveDialog onPay={handlePay} />
+            <ReserveDialog onPay={handlePay} availability={content.availability} />
           </div>
         </div>
 
@@ -130,9 +204,15 @@ export default function Master() {
         <div className="divider" />
 
         <h2 className="mb-2 text-2xl">Reservación</h2>
+        {content.availability.length > 0 && (
+          <div className="mb-4">
+            <h3 className="mb-1 font-semibold text-base">Disponibilidad</h3>
+            <p className="text-sm text-gray-600">Consulta los dias resaltados en el calendario.</p>
+          </div>
+        )}
         <div className="mb-8 flex justify-center">
           <Lazy>
-            <Calendar value={value} setValue={setValue} />
+            <Calendar value={value} setValue={setValue} availability={content.availability} />
           </Lazy>
         </div>
       </main>
@@ -140,17 +220,17 @@ export default function Master() {
   );
 }
 
-function Hero() {
+function Hero({ image }: { image: string }) {
   return (
-    <div className="mb-8 w-screen">
-      <img src="/draft/masters/master/hero.avif" />
+    <div className="mb-8 w-full">
+      <img src={image} className="mx-auto w-full max-w-[1100px] object-cover" />
     </div>
   );
 }
 
 function Tiles() {
   return (
-    <div className="mb-8 grid justify-center gap-4 md:grid-cols-3 md:grid-rows-3 lg:relative lg:-left-30 lg:w-[130%]">
+    <div className="mx-auto mb-8 grid max-w-[1100px] justify-center gap-4 md:grid-cols-3 md:grid-rows-3">
       <img src="/draft/masters/master/tile_1.avif" />
       <img src="/draft/masters/master/tile_2.avif" />
       <img src="/draft/masters/master/tile_3.avif" />
@@ -165,14 +245,14 @@ function Tiles() {
   );
 }
 
-function ReserveDialog({ onPay }: { onPay: (range: string) => void }) {
+function ReserveDialog({ onPay, availability }: { onPay: (range: string) => void; availability?: Array<{ from: string; to: string }> }) {
   const [value, setValue] = useState("")
 
   return <dialog id="id_reserve_button" className="modal">
     <div className="modal-box rounded-none min-w-160 flex flex-col">
       <h3 className="font-bold text-lg">Selecciona los dias de tu estancia</h3>
       <div className="flex justify-center">
-        <Calendar value={value} setValue={setValue} />
+        <Calendar value={value} setValue={setValue} availability={availability} />
       </div>
       <button className="btn btn-primary w-30 self-end" onClick={() => onPay(value)}>Pagar</button>
     </div>

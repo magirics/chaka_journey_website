@@ -16,6 +16,7 @@ import { Experiences } from './collections/Experiences'
 import { Home } from './collections/Home'
 import { Header } from './collections/Header'
 import { Footer } from './collections/Footer'
+import { TypeformSubmissions } from './collections/TypeformSubmissions'
 
 
 dotenv.config()
@@ -89,7 +90,7 @@ export default buildConfig({
     fallback: true,
   },
 
-  collections: [Users, Media, Reserves, Masters, Experiences, Home, Header, Footer],
+  collections: [Users, Media, Reserves, Masters, Experiences, Home, Header, Footer, TypeformSubmissions],
   admin: {
     user: Users.slug,
     importMap: {

@@ -1,13 +1,41 @@
 "use client";
 
 import { NavIcon } from "@/layout/Navbar";
+import { Link } from "@/navigation";
 import MasterCard from "@/ui/MasterCard";
 import Pricing from "@/ui/Pricing";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import React from "react";
+import { useLocale } from "next-intl";
+import { useEffect, useState } from "react";
 
-const masters = [
+type MasterCardData = {
+  id: string;
+  image: string;
+  on_hover_image: string;
+  name: string;
+  craft: string;
+  city: string;
+  country: string;
+  price: number;
+  days: number;
+};
+
+type PayloadMaster = {
+  id: number | string;
+  image?: {
+    url?: string;
+  } | null;
+  name?: string;
+  specialty?: string;
+  city?: string;
+  country?: string;
+  price?: number;
+  days?: number;
+};
+
+const fallbackMasters: MasterCardData[] = [
   {
     id: 'viviana',
     image: "/draft/masters/master_5.avif",
@@ -79,9 +107,66 @@ export default function Masters() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
+  const locale = useLocale();
+  const [masters, setMasters] = useState<MasterCardData[]>(fallbackMasters);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchMasters = async () => {
+      try {
+        const res = await fetch(
+          `/api/masters?limit=100&locale=${encodeURIComponent(locale)}&depth=1&where[active][equals]=true`
+        );
+
+        if (!res.ok) return;
+
+        const body = await res.json();
+        const docs = Array.isArray(body?.docs) ? (body.docs as PayloadMaster[]) : [];
+
+        const parsed = docs.reduce<MasterCardData[]>((acc, doc, index) => {
+          const image =
+            typeof doc.image === "object" && doc.image?.url
+              ? doc.image.url
+              : "";
+
+          if (!image) return acc;
+
+          const safePrice = typeof doc.price === "number" ? doc.price : 0;
+          const safeDays = typeof doc.days === "number" ? doc.days : 1;
+
+          acc.push({
+            id: String(doc.id),
+            image,
+            on_hover_image: image,
+            name: doc.name || "Master",
+            craft: doc.specialty || "Experiencia",
+            city: doc.city || "",
+            country: doc.country || "",
+            price: safePrice,
+            days: safeDays,
+          });
+
+          return acc;
+        }, []);
+
+        if (!isCancelled && parsed.length > 0) {
+          setMasters(parsed);
+        }
+      } catch {
+        // Keep fallback cards on fetch failure.
+      }
+    };
+
+    fetchMasters();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [locale]);
 
   // 🔹 Checkout handler
-  const handleClick = async (master: typeof masters[0]) => {
+  const handleClick = async (master: MasterCardData) => {
     const res = await fetch("/stripe/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -145,7 +230,9 @@ export default function Masters() {
             key={master.image}
             className="flex flex-col items-center gap-6 border rounded-lg p-4 shadow-md"
           >
-            <MasterCard {...master} />
+            <Link href={`/masters/${master.id}`} className="block">
+              <MasterCard {...master} />
+            </Link>
             <Pricing
               price={master.price}
               guestPrice={230}

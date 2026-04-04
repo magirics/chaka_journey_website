@@ -1,6 +1,7 @@
 import { getRequestConfig } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { routing } from './routing';
+import { footerPageMessages } from './footerPages';
 
 const apiBaseUrls = resolveApiBaseUrls();
 
@@ -34,9 +35,7 @@ async function get_messages(locale: string) {
         Home: homePage,
         Header: headerContent,
         Footer: footerContent,
-        //Experiences: pages[1],
-   //     Comments: pages[2]
-        
+        FooterPages: footerPageMessages[locale] || footerPageMessages.en,
     };
 
     return page as Record<string, unknown>;

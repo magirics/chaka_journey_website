@@ -23,7 +23,7 @@ export default function Contact() {
       <h1 className="text-3xl font-bold mb-6">Contáctanos</h1>
       <div
         className="typeform-widget"
-        data-url="https://form.typeform.com/to/XPi8B4yy"
+        data-url="https://form.typeform.com/to/WcDkGrEy"
         style={{ width: "100%", height: "500px" }}
       ></div>
     </div>

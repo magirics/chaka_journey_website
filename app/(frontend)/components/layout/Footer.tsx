@@ -1,7 +1,65 @@
 "use client";
 
 import Link from "next/link";
+import { Link as LocaleLink } from "../navigation";
 import { useMessages } from "next-intl";
+
+const defaultTermsLinks = [
+  { href: "/be-a-master", label: "Se un maestro" },
+  { href: "/gift", label: "Regala una experiencia" },
+  { href: "/terms", label: "Terminos" },
+  { href: "/privacy", label: "Privacidad" },
+];
+
+const footerHrefByLabel: Record<string, string> = {
+  "se un maestro": "/be-a-master",
+  "sé un maestro": "/be-a-master",
+  "be a master": "/be-a-master",
+  "devenir maitre": "/be-a-master",
+  "devenez maitre": "/be-a-master",
+  "meister werden": "/be-a-master",
+  "gastgeber meister werden": "/be-a-master",
+  "regala una experiencia": "/gift",
+  "gift an experience": "/gift",
+  "offrir une experience": "/gift",
+  "erlebnis verschenken": "/gift",
+  "terminos": "/terms",
+  "términos": "/terms",
+  "terms": "/terms",
+  "terms of service": "/terms",
+  "conditions d'utilisation": "/terms",
+  "nutzungsbedingungen": "/terms",
+  "privacidad": "/privacy",
+  "privacy": "/privacy",
+  "privacy policy": "/privacy",
+  "politique de confidentialite": "/privacy",
+  "datenschutzerklarung": "/privacy",
+};
+
+const normalizeLabel = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+function resolveFooterHref(href: string | undefined, label: string) {
+  if (href && href.trim()) return href;
+
+  const normalizedLabel = normalizeLabel(label);
+
+  if (footerHrefByLabel[normalizedLabel]) {
+    return footerHrefByLabel[normalizedLabel];
+  }
+
+  // Fallback by keyword so translated labels still map even if wording changes slightly.
+  if (/(master|maitre|maestro|meister)/.test(normalizedLabel)) return "/be-a-master";
+  if (/(gift|regal|cadeau|geschenk|experience|experiencia|erlebnis)/.test(normalizedLabel)) return "/gift";
+  if (/(term|condit|nutzung|termino|termino|bedingungen)/.test(normalizedLabel)) return "/terms";
+  if (/(privacy|privacidad|confidentialite|datenschutz)/.test(normalizedLabel)) return "/privacy";
+
+  return "#";
+}
 
 export default function Footer() {
   const messages = useMessages() as Record<string, any>;
@@ -15,13 +73,11 @@ export default function Footer() {
       ];
 
   const termsLinks = Array.isArray(footer?.termsLinks) && footer.termsLinks.length > 0
-    ? footer.termsLinks.map((link: any) => ({ href: link?.href || "#", label: link?.label || "Link" }))
-    : [
-        { href: "", label: "Se un maestro" },
-        { href: "", label: "Regala una experiencia" },
-        { href: "", label: "Terminos" },
-        { href: "", label: "Privacidad" },
-      ];
+    ? footer.termsLinks.map((link: any) => ({
+        href: resolveFooterHref(link?.href, link?.label || "Link"),
+        label: link?.label || "Link",
+      }))
+    : defaultTermsLinks;
 
   const socialLinks = Array.isArray(footer?.socialLinks) && footer.socialLinks.length > 0
     ? footer.socialLinks.map((link: any) => ({
@@ -131,9 +187,9 @@ export function Contact({
 
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="text-white/96 transition-all hover:text-white hover:opacity-72">
+    <LocaleLink href={href} className="text-white/96 transition-all hover:text-white hover:opacity-72">
       {children}
-    </Link>
+    </LocaleLink>
   );
 }
 
@@ -147,9 +203,9 @@ function SocialIcon({ href, icon, label }: { href: string; icon: string; label: 
 
 function BrandLockup() {
   return (
-    <Link href="/home" className="inline-flex items-center gap-3 text-white/90 transition-opacity hover:opacity-75">
+    <LocaleLink href="/home" className="inline-flex items-center gap-3 text-white/90 transition-opacity hover:opacity-75">
       <img src="/logo.png" alt="Chaka" className="h-7 w-auto invert" />
       <span className="text-[11px] font-medium tracking-[0.22em]">CHAKA JOURNEY</span>
-    </Link>
+    </LocaleLink>
   );
 }
