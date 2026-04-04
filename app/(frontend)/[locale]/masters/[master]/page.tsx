@@ -12,6 +12,9 @@ type PayloadMaster = {
   name?: string;
   specialty?: string;
   title?: string;
+  experienceIncludes?: string;
+  exploreCity?: string;
+  additionalDetails?: string;
   city?: string;
   country?: string;
   days?: number;
@@ -20,13 +23,101 @@ type PayloadMaster = {
   image?: {
     url?: string;
   } | null;
+  gallery?: Array<{
+    image?: {
+      url?: string;
+    } | number | null;
+  }>;
   availability?: Array<{ from: string; to: string }>;
+};
+
+const fallbackGalleryImages = [
+  '/draft/masters/master/tile_1.avif',
+  '/draft/masters/master/tile_2.avif',
+  '/draft/masters/master/tile_3.avif',
+  '/draft/masters/master/tile_4.avif',
+  '/draft/masters/master/tile_5.avif',
+  '/draft/masters/master/tile_6.avif',
+  '/draft/masters/master/tile_7.avif',
+  '/draft/masters/master/tile_8.avif',
+];
+
+const SAVED_MASTERS_STORAGE_KEY = 'chaka_favorite_masters';
+
+const masterUiByLocale: Record<string, {
+  withLabel: string;
+  daysLabel: string;
+  meetMaster: string;
+  experienceIncludes: string;
+  exploreCity: string;
+  additional: string;
+  reservation: string;
+  availability: string;
+  availabilityHint: string;
+  selectStayDays: string;
+  pay: string;
+}> = {
+  es: {
+    withLabel: 'con',
+    daysLabel: 'dias',
+    meetMaster: 'Conoce al maestro',
+    experienceIncludes: 'La experiencia incluye:',
+    exploreCity: 'Explora la ciudad',
+    additional: 'Adicional',
+    reservation: 'Reservacion',
+    availability: 'Disponibilidad',
+    availabilityHint: 'Consulta los dias resaltados en el calendario.',
+    selectStayDays: 'Selecciona los dias de tu estancia',
+    pay: 'Pagar',
+  },
+  en: {
+    withLabel: 'with',
+    daysLabel: 'days',
+    meetMaster: 'Meet the master',
+    experienceIncludes: 'The experience includes:',
+    exploreCity: 'Explore the city',
+    additional: 'Additional',
+    reservation: 'Reservation',
+    availability: 'Availability',
+    availabilityHint: 'Check highlighted days in the calendar.',
+    selectStayDays: 'Select your stay days',
+    pay: 'Pay',
+  },
+  fr: {
+    withLabel: 'avec',
+    daysLabel: 'jours',
+    meetMaster: 'Rencontrez le maitre',
+    experienceIncludes: "L'experience inclut:",
+    exploreCity: 'Explorer la ville',
+    additional: 'Supplementaire',
+    reservation: 'Reservation',
+    availability: 'Disponibilite',
+    availabilityHint: 'Consultez les jours mis en evidence dans le calendrier.',
+    selectStayDays: 'Selectionnez les jours de votre sejour',
+    pay: 'Payer',
+  },
+  de: {
+    withLabel: 'mit',
+    daysLabel: 'Tage',
+    meetMaster: 'Lerne den Meister kennen',
+    experienceIncludes: 'Das Erlebnis beinhaltet:',
+    exploreCity: 'Entdecke die Stadt',
+    additional: 'Zusaetzlich',
+    reservation: 'Reservierung',
+    availability: 'Verfugbarkeit',
+    availabilityHint: 'Prufe die markierten Tage im Kalender.',
+    selectStayDays: 'Wahle die Tage deines Aufenthalts',
+    pay: 'Bezahlen',
+  },
 };
 
 export default function Master() {
   const [value, setValue] = useState("")
   const [masterData, setMasterData] = useState<PayloadMaster | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const locale = useLocale();
+  const ui = masterUiByLocale[locale] || masterUiByLocale.en;
+  const [isSaved, setIsSaved] = useState<boolean>(false);
 
   const params = useParams();
   const masterIdFromParams = Array.isArray(params?.master)
@@ -39,6 +130,8 @@ export default function Master() {
     let isCancelled = false;
 
     const fetchMaster = async () => {
+      setIsLoading(true);
+
       try {
         const numericId = /^\d+$/.test(String(masterIdFromParams));
         const endpoint = numericId
@@ -56,6 +149,10 @@ export default function Master() {
         }
       } catch {
         // Keep fallback copy on fetch failure.
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -66,9 +163,29 @@ export default function Master() {
     };
   }, [locale, masterIdFromParams]);
 
+  useEffect(() => {
+    const currentMasterId = String(masterIdFromParams || masterData?.id || '');
+    if (!currentMasterId) return;
+
+    try {
+      const raw = localStorage.getItem(SAVED_MASTERS_STORAGE_KEY);
+      if (!raw) {
+        setIsSaved(false);
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      const ids = Array.isArray(parsed) ? parsed.map((value) => String(value)) : [];
+      setIsSaved(ids.includes(currentMasterId));
+    } catch {
+      setIsSaved(false);
+    }
+  }, [masterData?.id, masterIdFromParams]);
+
   const content = useMemo(() => {
     const name = masterData?.name || "Master";
     const craft = masterData?.specialty || masterData?.title || "Experiencia";
+    const title = masterData?.title || `${craft} ${ui.withLabel} ${name}`;
     const city = masterData?.city || "";
     const country = masterData?.country || "";
     const days = typeof masterData?.days === "number" ? masterData.days : 3;
@@ -81,25 +198,70 @@ export default function Master() {
       masterData?.bio ||
       "Conoce al maestro y vive una experiencia curada en profundidad junto a Chaka Journey.";
 
+    const experienceIncludes = masterData?.experienceIncludes || '';
+    const exploreCity = masterData?.exploreCity || '';
+    const additionalDetails = masterData?.additionalDetails || '';
+
     const availability = Array.isArray(masterData?.availability) ? masterData.availability : [];
+    const galleryImages = Array.isArray(masterData?.gallery)
+      ? masterData.gallery
+          .map((item) => {
+            if (!item || typeof item !== 'object') return '';
+
+            const media = item.image;
+            if (media && typeof media === 'object' && typeof media.url === 'string') {
+              return media.url;
+            }
+
+            return '';
+          })
+          .filter((url): url is string => Boolean(url))
+          .slice(0, 9)
+      : [];
 
     return {
       name,
       craft,
+      title,
       city,
       country,
       days,
       price,
       image,
       bio,
+      experienceIncludes,
+      exploreCity,
+      additionalDetails,
+      galleryImages,
       availability,
     };
-  }, [masterData]);
+  }, [masterData, ui.withLabel]);
 
   const handleReserve = () => {
     const dlg = document.getElementById('id_reserve_button') as HTMLDialogElement | null;
     dlg?.showModal();
   }
+
+  const handleSave = () => {
+    const currentMasterId = String(masterIdFromParams || masterData?.id || '');
+    if (!currentMasterId) return;
+
+    try {
+      const raw = localStorage.getItem(SAVED_MASTERS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const ids = Array.isArray(parsed) ? parsed.map((value) => String(value)) : [];
+      const next = ids.includes(currentMasterId)
+        ? ids.filter((id) => id !== currentMasterId)
+        : [...ids, currentMasterId];
+
+      localStorage.setItem(SAVED_MASTERS_STORAGE_KEY, JSON.stringify(next));
+      window.dispatchEvent(new Event('chaka-favorites-updated'));
+      setIsSaved(next.includes(currentMasterId));
+    } catch {
+      setIsSaved(false);
+    }
+  }
+
   const handlePay = async (range: string) => {
     console.log('Selected range', range)
     let startDate = null; let endDate = null;
@@ -135,24 +297,15 @@ export default function Master() {
   const overview =
     content.bio;
 
-  const meet_the_master =
-    content.bio;
+  const meet_the_master = content.bio;
 
-  const experience_includes = `
-▪ Experiencing Viviana’s everyday life in Buenos Aires, the tango capital.
-▪ One hour of private instruction everyday.
-▪ Two group classes to practice with other dance partners.
-▪ Two evenings dancing in Viviana’s favorite milongas in the city - one underground and one upscale. Includes entrance fees.
-▪ Visiting local cafes that are known for their tango history.
-▪ Visiting Viviana’s musician friends for their regular tango music jams, if possible.
-▪ Option to visit Viviana’s favorite tango shoe store if you need to buy a pair.
-  `;
-
-  const explore_city =
-    "The many cultures that have filtered into Buenos Aires via its ports have led to French architecture, English lifestyle, Spanish culture, and Italian flair. Made up of bits and pieces from around the world, Buenos Aires nevertheless has an identity of its own. Its urban art scene, in particular, is one of the best in the world, due to relaxed laws that enable artists to leave their mark just about everywhere in the city. Meanwhile, the neighborhood of Palermo is a hip, bohemian network of bars, outdoor cafes, and trendy shops housed in elegant old houses and repurposed warehouses.";
-
-  const additional_details =
-    "This VAWAA is available for a longer duration. If interested in extending your time, let us know by how many days and we will do our best to accommodate you.";
+  if (isLoading && !masterData) {
+    return (
+      <main className="mx-auto w-full max-w-[1100px] px-6 py-10 md:px-8">
+        <p className="text-sm opacity-70">Loading experience...</p>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -160,7 +313,7 @@ export default function Master() {
 
       <main className="mx-auto w-full max-w-[1100px] px-6 md:px-8">
         <span>
-          {content.city}, {content.country} {content.days} dias
+          {content.city}, {content.country} {content.days} {ui.daysLabel}
         </span>
 
         <div className="divider" />
@@ -168,8 +321,9 @@ export default function Master() {
         <div className="space-x-16 md:flex">
           <div>
             <h1 className="mb-4 text-4xl">
-              {content.craft} con {content.name}
+              {content.title}
             </h1>
+            <p className="mb-3 text-sm text-slate-600">{content.craft} {ui.withLabel} {content.name}</p>
             <p>{overview}</p>
           </div>
 
@@ -180,34 +334,41 @@ export default function Master() {
               guestPrice={230}
               maxGuests={4}
               onReserve={handleReserve}
+              onSave={handleSave}
+              isSaved={isSaved}
             />
-            <ReserveDialog onPay={handlePay} availability={content.availability} />
+            <ReserveDialog
+              onPay={handlePay}
+              availability={content.availability}
+              selectStayDaysLabel={ui.selectStayDays}
+              payLabel={ui.pay}
+            />
           </div>
         </div>
 
         <div className="divider" />
 
-        <Tiles />
+        <Tiles images={content.galleryImages.length > 0 ? content.galleryImages : fallbackGalleryImages} />
 
-        <h2 className="mb-2 text-2xl">Conoce al maestro</h2>
+        <h2 className="mb-2 text-2xl">{ui.meetMaster}</h2>
         <p className="mb-16">{meet_the_master}</p>
 
-        <h2 className="mb-2 text-2xl">La experiencia incluye:</h2>
-        <p className="mb-16 whitespace-pre-wrap">{experience_includes}</p>
+        <h2 className="mb-2 text-2xl">{ui.experienceIncludes}</h2>
+        <p className="mb-16 whitespace-pre-wrap">{content.experienceIncludes}</p>
 
-        <h2 className="mb-2 text-2xl">Explora la ciudad</h2>
-        <p className="mb-16">{explore_city}</p>
+        <h2 className="mb-2 text-2xl">{ui.exploreCity}</h2>
+        <p className="mb-16 whitespace-pre-wrap">{content.exploreCity}</p>
 
-        <h2 className="mb-2 text-2xl">Adicional</h2>
-        <p className="mb-16">{additional_details}</p>
+        <h2 className="mb-2 text-2xl">{ui.additional}</h2>
+        <p className="mb-16 whitespace-pre-wrap">{content.additionalDetails}</p>
 
         <div className="divider" />
 
-        <h2 className="mb-2 text-2xl">Reservación</h2>
+        <h2 className="mb-2 text-2xl">{ui.reservation}</h2>
         {content.availability.length > 0 && (
           <div className="mb-4">
-            <h3 className="mb-1 font-semibold text-base">Disponibilidad</h3>
-            <p className="text-sm text-gray-600">Consulta los dias resaltados en el calendario.</p>
+            <h3 className="mb-1 font-semibold text-base">{ui.availability}</h3>
+            <p className="text-sm text-gray-600">{ui.availabilityHint}</p>
           </div>
         )}
         <div className="mb-8 flex justify-center">
@@ -228,33 +389,36 @@ function Hero({ image }: { image: string }) {
   );
 }
 
-function Tiles() {
+function Tiles({ images }: { images: string[] }) {
   return (
     <div className="mx-auto mb-8 grid max-w-[1100px] justify-center gap-4 md:grid-cols-3 md:grid-rows-3">
-      <img src="/draft/masters/master/tile_1.avif" />
-      <img src="/draft/masters/master/tile_2.avif" />
-      <img src="/draft/masters/master/tile_3.avif" />
-
-      <img src="/draft/masters/master/tile_4.avif" />
-      <img src="/draft/masters/master/tile_5.avif" />
-      <img src="/draft/masters/master/tile_6.avif" />
-
-      <img src="/draft/masters/master/tile_7.avif" />
-      <img src="/draft/masters/master/tile_8.avif" />
+      {images.map((src, index) => (
+        <img key={`${src}-${index}`} src={src} />
+      ))}
     </div>
   );
 }
 
-function ReserveDialog({ onPay, availability }: { onPay: (range: string) => void; availability?: Array<{ from: string; to: string }> }) {
+function ReserveDialog({
+  onPay,
+  availability,
+  selectStayDaysLabel,
+  payLabel,
+}: {
+  onPay: (range: string) => void;
+  availability?: Array<{ from: string; to: string }>;
+  selectStayDaysLabel: string;
+  payLabel: string;
+}) {
   const [value, setValue] = useState("")
 
   return <dialog id="id_reserve_button" className="modal">
     <div className="modal-box rounded-none min-w-160 flex flex-col">
-      <h3 className="font-bold text-lg">Selecciona los dias de tu estancia</h3>
+      <h3 className="font-bold text-lg">{selectStayDaysLabel}</h3>
       <div className="flex justify-center">
         <Calendar value={value} setValue={setValue} availability={availability} />
       </div>
-      <button className="btn btn-primary w-30 self-end" onClick={() => onPay(value)}>Pagar</button>
+      <button className="btn btn-primary w-30 self-end" onClick={() => onPay(value)}>{payLabel}</button>
     </div>
 
     <form method="dialog" className="modal-backdrop">

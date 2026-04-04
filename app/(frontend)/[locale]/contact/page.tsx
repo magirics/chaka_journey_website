@@ -19,8 +19,13 @@ export default function Contact() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto py-16 px-4">
-      <h1 className="text-3xl font-bold mb-6">Contáctanos</h1>
+    <div className="mx-auto max-w-4xl px-4 py-16 md:py-20">
+      <h1 className="mb-6 text-4xl leading-[1.02] font-medium tracking-[-0.035em] text-neutral-900 md:text-6xl">
+        Contáctanos
+      </h1>
+      <p className="mb-8 max-w-2xl text-base leading-7 font-medium text-neutral-700 md:text-lg">
+        Cuéntanos sobre tu interés y te responderemos con más detalle.
+      </p>
       <div
         className="typeform-widget"
         data-url="https://form.typeform.com/to/WcDkGrEy"

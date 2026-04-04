@@ -41,6 +41,7 @@ export default async function Experiences({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const ui = experiencesUiByLocale[locale] || experiencesUiByLocale.en;
   const payloadExperiences = await getExperiencesFromPayload(locale);
 
   const payloadCards = payloadExperiences.reduce<ExperienceCardProps[]>((acc, experience) => {
@@ -54,6 +55,7 @@ export default async function Experiences({
 
     acc.push({
       id,
+      locale,
       image,
       user: {
         name: experience.user?.name || "",
@@ -73,6 +75,7 @@ export default async function Experiences({
     ? payloadCards
     : experiencesCatalog.map((experience) => ({
         id: experience.id,
+      locale,
         image: experience.image,
         user: experience.user,
         master: experience.master,
@@ -80,19 +83,27 @@ export default async function Experiences({
 
   return (
     <>
-      <PageTitle>Experiencias</PageTitle>
+      <PageTitle>{ui.title}</PageTitle>
 
       <ul className="m-8 flex flex-col gap-16 md:mx-0 md:flex-row md:flex-wrap md:justify-center md:gap-8">
         {cards.map((experience) => (
-          <ExperienceCard key={experience.id} {...experience} />
+          <ExperienceCard key={experience.id} {...experience} locale={locale} />
         ))}
       </ul>
     </>
   );
 }
 
+const experiencesUiByLocale: Record<string, { title: string; from: string; with: string; in: string }> = {
+  es: { title: 'Experiencias', from: 'de', with: 'con', in: 'en' },
+  en: { title: 'Experiences', from: 'from', with: 'with', in: 'in' },
+  fr: { title: 'Experiences', from: 'de', with: 'avec', in: 'a' },
+  de: { title: 'Erlebnisse', from: 'aus', with: 'mit', in: 'in' },
+};
+
 type ExperienceCardProps = {
   id: string;
+  locale: string;
   image: string;
   user: {
     name: string;
@@ -105,7 +116,9 @@ type ExperienceCardProps = {
   };
 };
 
-function ExperienceCard({ id, image, user, master }: ExperienceCardProps) {
+function ExperienceCard({ id, locale, image, user, master }: ExperienceCardProps) {
+  const ui = experiencesUiByLocale[locale] || experiencesUiByLocale.en;
+
   return (
     <li className="max-w-120 list-none">
       <Link
@@ -114,8 +127,8 @@ function ExperienceCard({ id, image, user, master }: ExperienceCardProps) {
       >
         <img src={image} alt={user.name} />
         <h2 className="mt-4">
-          <strong>{user.name}</strong> de {user.country}. {master.craft} con{" "}
-          <strong>{master.name}</strong> en {master.country}
+          <strong>{user.name}</strong> {ui.from} {user.country}. {master.craft} {ui.with}{" "}
+          <strong>{master.name}</strong> {ui.in} {master.country}
         </h2>
       </Link>
     </li>

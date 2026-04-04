@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { Manrope } from "next/font/google";
 import { Link as LocaleLink } from "../navigation";
 import { useMessages } from "next-intl";
+
+const vawaaSans = Manrope({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
 
 const defaultTermsLinks = [
   { href: "/be-a-master", label: "Se un maestro" },
@@ -93,7 +100,7 @@ export default function Footer() {
       ];
 
   return (
-    <footer className="w-screen bg-[#141416] px-8 py-10 text-white md:px-12 md:py-11">
+    <footer className={`w-screen bg-[#141416] px-8 py-10 text-white md:px-12 md:py-11 ${vawaaSans.className}`}>
       <div className="mx-auto max-w-[1680px]">
         <div className="grid gap-10 md:grid-cols-[minmax(320px,1.45fr)_minmax(170px,0.78fr)_minmax(240px,0.98fr)_minmax(220px,0.9fr)] md:gap-12">
           <Subscribe footer={footer} />
@@ -113,10 +120,10 @@ export default function Footer() {
 export function Subscribe({ footer }: { footer: Record<string, any> }) {
   return (
     <section className="max-w-[430px] md:pr-8">
-      <h6 className="text-[27px] leading-[1.08] font-normal tracking-[-0.02em] text-white md:text-[30px]">
+      <h6 className="text-[27px] leading-[1.08] font-semibold tracking-[-0.02em] text-white md:text-[30px]">
         {footer?.subscribeTitle || "No te pierdas de nada"}
       </h6>
-      <p className="mt-5 max-w-[320px] text-[14px] leading-7 text-white/80 md:text-[15px]">
+      <p className="mt-5 max-w-[320px] text-[14px] leading-7 font-semibold text-white/80 md:text-[15px]">
         {footer?.subscribeDescription || "Se el primero en saber de nuevos maestros, destinos y anuncios."}
       </p>
       <form className="mt-8 flex flex-col gap-6">
@@ -145,7 +152,7 @@ export function Subscribe({ footer }: { footer: Record<string, any> }) {
 export function Us({ links }: { links: Array<{ href: string; label: string }> }) {
   return (
     <section className="pt-3 md:pt-4">
-      <ul className="space-y-7 text-[15px] font-medium leading-none text-white/92 md:text-[16px]">
+      <ul className="space-y-7 text-[15px] font-semibold leading-none text-white/92 md:text-[16px]">
         {links.map((link) => (
           <li key={`${link.href}-${link.label}`}><FooterLink href={link.href}>{link.label}</FooterLink></li>
         ))}
@@ -157,7 +164,7 @@ export function Us({ links }: { links: Array<{ href: string; label: string }> })
 export function Terms({ links }: { links: Array<{ href: string; label: string }> }) {
   return (
     <section className="pt-3 md:pt-4">
-      <ul className="space-y-7 text-[15px] font-medium leading-none text-white/92 md:text-[16px]">
+      <ul className="space-y-7 text-[15px] font-semibold leading-none text-white/92 md:text-[16px]">
         {links.map((link) => (
           <li key={`${link.href}-${link.label}`}><FooterLink href={link.href}>{link.label}</FooterLink></li>
         ))}
@@ -175,7 +182,7 @@ export function Contact({
 }) {
   return (
     <section className="pt-3 md:pt-4">
-      <h6 className="text-[15px] font-medium text-white/92 md:text-[16px]">{footer?.contactTitle || "Contactanos"}</h6>
+      <h6 className="text-[15px] font-semibold text-white/92 md:text-[16px]">{footer?.contactTitle || "Contactanos"}</h6>
       <ul className="mt-6 flex flex-row flex-wrap gap-4">
         {socialLinks.map((link) => (
           <li key={`${link.href}-${link.icon}`}><SocialIcon href={link.href} icon={link.icon} label={link.label} /></li>
@@ -205,7 +212,7 @@ function BrandLockup() {
   return (
     <LocaleLink href="/home" className="inline-flex items-center gap-3 text-white/90 transition-opacity hover:opacity-75">
       <img src="/logo.png" alt="Chaka" className="h-7 w-auto invert" />
-      <span className="text-[11px] font-medium tracking-[0.22em]">CHAKA JOURNEY</span>
+      <span className="text-[11px] font-semibold tracking-[0.22em]">CHAKA JOURNEY</span>
     </LocaleLink>
   );
 }

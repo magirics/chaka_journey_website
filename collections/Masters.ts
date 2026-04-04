@@ -3,7 +3,7 @@ import { CollectionConfig } from 'payload';
 export const Masters: CollectionConfig = {
   slug: 'masters',
   admin: {
-    useAsTitle: 'name',
+    useAsTitle: 'title',
   },
   access: {
     read: () => true,
@@ -16,7 +16,6 @@ export const Masters: CollectionConfig = {
       name: 'name',
       type: 'text',
       required: true,
-      localized: true,
     },
     {
       name: 'key', // DNI
@@ -29,6 +28,7 @@ export const Masters: CollectionConfig = {
     {
       name: 'bio',
       type: 'textarea',
+      localized: true,
     },
     {
       name: 'specialty',
@@ -38,6 +38,22 @@ export const Masters: CollectionConfig = {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
+    },
+    {
+      name: 'gallery',
+      type: 'array',
+      maxRows: 9,
+      admin: {
+        description: 'Maximo 9 imágenes para la galería del maestro.',
+      },
+      fields: [
+        {
+          name: 'image',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+        },
+      ],
     },
 
     {
@@ -49,6 +65,34 @@ export const Masters: CollectionConfig = {
       name: 'title', // Título del taller
       type: 'text',
       required: true,
+      localized: true,
+    },
+    {
+      name: 'experienceIncludes',
+      label: 'Experience includes content',
+      type: 'textarea',
+      localized: true,
+      admin: {
+        description: 'Body editable para la sección "La experiencia incluye".',
+      },
+    },
+    {
+      name: 'exploreCity',
+      label: 'Explore city content',
+      type: 'textarea',
+      localized: true,
+      admin: {
+        description: 'Body editable para la sección "Explora la ciudad".',
+      },
+    },
+    {
+      name: 'additionalDetails',
+      label: 'Additional details content',
+      type: 'textarea',
+      localized: true,
+      admin: {
+        description: 'Body editable para la sección "Adicional".',
+      },
     },
     {
       name: 'price', // Precio del taller

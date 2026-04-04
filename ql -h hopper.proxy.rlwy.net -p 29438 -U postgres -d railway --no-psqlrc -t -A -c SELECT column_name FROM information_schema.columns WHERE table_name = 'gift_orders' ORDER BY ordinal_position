@@ -1,0 +1,33 @@
+                                               Table "public.gift_orders"
+          Column          |            Type             | Collation | Nullable |                 Default                 
+--------------------------+-----------------------------+-----------+----------+-----------------------------------------
+ id                       | integer                     |           | not null | nextval('gift_orders_id_seq'::regclass)
+ gift_id                  | integer                     |           | not null | 
+ master_id                | integer                     |           |          | 
+ customer_email           | character varying           |           | not null | 
+ gift_type                | enum_gift_orders_gift_type  |           | not null | 'physical'::enum_gift_orders_gift_type
+ stripe_session_id        | character varying           |           | not null | 
+ stripe_payment_intent_id | character varying           |           |          | 
+ subtotal_amount          | numeric                     |           | not null | 
+ delivery_fee             | numeric                     |           | not null | 0
+ total_amount             | numeric                     |           | not null | 
+ currency                 | character varying           |           | not null | 'usd'::character varying
+ status                   | enum_gift_orders_status     |           | not null | 'paid'::enum_gift_orders_status
+ updated_at               | timestamp(3) with time zone |           | not null | now()
+ created_at               | timestamp(3) with time zone |           | not null | now()
+ recipient_name           | character varying           |           | not null | 
+ delivery_address         | character varying           |           |          | 
+ gift_note                | character varying           |           |          | 
+Indexes:
+    "gift_orders_pkey" PRIMARY KEY, btree (id)
+    "gift_orders_created_at_idx" btree (created_at)
+    "gift_orders_gift_idx" btree (gift_id)
+    "gift_orders_master_idx" btree (master_id)
+    "gift_orders_stripe_session_id_idx" UNIQUE, btree (stripe_session_id)
+    "gift_orders_updated_at_idx" btree (updated_at)
+Foreign-key constraints:
+    "gift_orders_gift_id_gifts_id_fk" FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE SET NULL
+    "gift_orders_master_id_masters_id_fk" FOREIGN KEY (master_id) REFERENCES masters(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "payload_locked_documents_rels" CONSTRAINT "payload_locked_documents_rels_gift_orders_fk" FOREIGN KEY (gift_orders_id) REFERENCES gift_orders(id) ON DELETE CASCADE
+

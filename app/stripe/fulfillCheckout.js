@@ -1,7 +1,6 @@
 import Stripe from 'stripe';
 import payload from 'payload';
 import nodemailer from 'nodemailer';
-//import config from '@/payload.config'; 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -32,51 +31,107 @@ export async function fulfillCheckout(sessionId) {
 
     // 🔹 Variables reutilizables
     const customerEmail = checkoutSession.customer_details?.email;
-    const amount = checkoutSession.amount_total / 100;
+    const amount = (checkoutSession.amount_total || 0) / 100;
+    const checkoutType = checkoutSession.metadata?.checkoutType === 'gift' ? 'gift' : 'reserve';
+
+    if (!customerEmail) {
+      console.warn('FulfillCheckout: no customer email found in Stripe session; aborting fulfillment.');
+      return;
+    }
 
     // Intentar leer metadata enviada desde create-checkout-session
     const masterId = checkoutSession.metadata?.masterId || null;
     const startDate = checkoutSession.metadata?.startDate || null;
     const endDate = checkoutSession.metadata?.endDate || null;
+    const giftId = checkoutSession.metadata?.giftId || null;
+    const giftType = checkoutSession.metadata?.giftType || 'physical';
+    const recipientName = checkoutSession.metadata?.recipientName || '';
+    const deliveryAddress = checkoutSession.metadata?.deliveryAddress || '';
+    const giftNote = checkoutSession.metadata?.giftNote || '';
+    const subtotalAmount = Number(checkoutSession.metadata?.subtotalAmount || amount);
+    const deliveryFee = Number(checkoutSession.metadata?.deliveryFee || 0);
 
-    console.log('FulfillCheckout: metadata masterId, startDate, endDate:', masterId, startDate, endDate);
-
-    // Validación: si la lógica requiere master y fechas, abortamos si no están
-    if (!masterId || !startDate || !endDate) {
-      console.warn('FulfillCheckout: falta masterId/startDate/endDate en metadata; no se creará la reserva.');
-      return;
-    }
-
-// 3️⃣ Crear la reserva en Payload
-    console.log('FulfillCheckout: creando reserva en Payload con:', {
-      stripeSessionId: sessionId,
-      customerEmail,
-      amount,
+    console.log('FulfillCheckout: metadata', {
+      checkoutType,
       masterId,
       startDate,
       endDate,
-      items: checkoutSession.line_items?.data?.map(i => ({ desc: i.description, qty: i.quantity })) || [],
+      giftId,
+      giftType,
+      recipientName,
+      deliveryAddress,
+      giftNote,
+      subtotalAmount,
+      deliveryFee,
     });
-const reserva = await payload.create({
-  collection: 'reserves',
-  data: {
-    stripeSessionId: sessionId,
-    customerEmail,
-    amount,
-    status: 'paid',
-    items: checkoutSession.line_items?.data?.map(item => ({
-      description: item.description,
-      quantity: item.quantity,
-    })) || [],
-    ...(masterId ? { master: masterId } : {}),
-    ...(startDate ? { startDate } : {}),
-    ...(endDate ? { endDate } : {}),
-  },
-});
 
-    console.log('✅ Reserva creada en Payload con ID:', reserva.id);
-    
-// 4️⃣ Enviar correo...
+    // 3️⃣ Crear transacción de regalo
+    let savedOrder;
+    if (checkoutType === 'gift') {
+      if (!giftId) {
+        console.warn('FulfillCheckout: falta giftId en metadata; no se creará la orden de regalo.');
+        return;
+      }
+
+      if (!recipientName) {
+        console.warn('FulfillCheckout: falta recipientName en metadata; no se creará la orden de regalo.');
+        return;
+      }
+
+      savedOrder = await payload.create({
+        collection: 'gift-orders',
+        data: {
+          gift: giftId,
+          ...(masterId ? { master: masterId } : {}),
+          customerEmail,
+          recipientName,
+          ...(deliveryAddress ? { deliveryAddress } : {}),
+          ...(giftNote ? { giftNote } : {}),
+          giftType,
+          stripeSessionId: sessionId,
+          stripePaymentIntentId: checkoutSession.payment_intent?.toString() || '',
+          subtotalAmount,
+          deliveryFee,
+          totalAmount: amount,
+          currency: checkoutSession.currency || 'usd',
+          status: 'paid',
+        },
+      });
+
+      console.log('✅ Orden de regalo creada con ID:', savedOrder.id);
+    } else {
+      // Validación: si la lógica requiere master y fechas, abortamos si no están
+      if (!masterId || !startDate || !endDate) {
+        console.warn('FulfillCheckout: falta masterId/startDate/endDate en metadata; no se creará la reserva.');
+        return;
+      }
+
+      // 4️⃣ Crear la reserva en Payload
+      console.log('FulfillCheckout: creando reserva en Payload con:', {
+        stripeSessionId: sessionId,
+        customerEmail,
+        amount,
+        masterId,
+        startDate,
+        endDate,
+      });
+
+      savedOrder = await payload.create({
+        collection: 'reserves',
+        data: {
+          stripeSessionId: sessionId,
+          customerEmail,
+          status: 'paid',
+          ...(masterId ? { master: masterId } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+      });
+
+      console.log('✅ Reserva creada en Payload con ID:', savedOrder.id);
+    }
+
+    // 5️⃣ Enviar correo...
     const transporter = nodemailer.createTransport({
       host:     process.env.SMTP_HOST,
       port:     Number(process.env.SMTP_PORT) || 587,
@@ -88,31 +143,41 @@ const reserva = await payload.create({
     });
 
     await transporter.sendMail({
-  from: `"Chaka Journey" <${process.env.SMTP_USER}>`,
-  to: customerEmail,
-  subject: '✨ Confirmación de tu reserva - Chaka Journey',
-  html: `
+      from: `"Chaka Journey" <${process.env.SMTP_USER}>`,
+      to: customerEmail,
+      subject:
+        checkoutType === 'gift'
+          ? 'Tu regalo en Chaka ha sido confirmado'
+          : 'Confirmacion de tu reserva - Chaka Journey',
+      html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; background-color: #f9f9f9; border: 1px solid #eee;">
       <h2 style="color: #4CAF50; text-align: center;">✅ ¡Tu pago fue recibido!</h2>
       <p style="font-size: 16px; color: #333;">
         Hola <strong>${customerEmail}</strong>,<br><br>
-        Gracias por confiar en <strong>Chaka Journey</strong>. Tu reserva ha sido confirmada con éxito.
+        ${
+          checkoutType === 'gift'
+            ? 'Gracias por confiar en <strong>Chaka Journey</strong>. Tu regalo ha sido confirmado con exito.'
+            : 'Gracias por confiar en <strong>Chaka Journey</strong>. Tu reserva ha sido confirmada con exito.'
+        }
       </p>
       
       <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin: 20px 0;">
         <p style="margin: 5px 0; font-size: 15px;"><strong>Monto:</strong> $${amount}</p>
-        <p style="margin: 5px 0; font-size: 15px;"><strong>Código de reserva:</strong> ${reserva.id}</p>
-        <p style="margin: 5px 0; font-size: 15px;"><strong>Estado:</strong> ${reserva.status}</p>
+        <p style="margin: 5px 0; font-size: 15px;"><strong>Codigo:</strong> ${savedOrder.id}</p>
+        <p style="margin: 5px 0; font-size: 15px;"><strong>Estado:</strong> ${savedOrder.status}</p>
       </div>
       
       <p style="font-size: 15px; color: #555;">
-        Nos pondremos en contacto contigo con más detalles muy pronto.<br>
-        Mientras tanto, puedes comunicarte con nosotros si tienes alguna consulta.
+        ${
+          checkoutType === 'gift'
+            ? 'Te contactaremos para confirmar la entrega y el mensaje personalizado del regalo.<br>Mientras tanto, puedes escribirnos si tienes alguna consulta.'
+            : 'Nos pondremos en contacto contigo con mas detalles muy pronto.<br>Mientras tanto, puedes comunicarte con nosotros si tienes alguna consulta.'
+        }
       </p>
       
       <div style="text-align: center; margin-top: 20px;">
         <a href="https://chaka.com" style="background-color: #4CAF50; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; display: inline-block;">
-          Ver tu reserva
+          Ver en Chaka
         </a>
       </div>
       
@@ -121,7 +186,7 @@ const reserva = await payload.create({
       </p>
     </div>
   `,
-});
+    });
 
     console.log(`📧 Correo enviado a ${customerEmail}`);
 

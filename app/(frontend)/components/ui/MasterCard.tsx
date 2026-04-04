@@ -7,11 +7,24 @@ type MasterCardProps = {
   country: string;
   price: number;
   days: number;
+  withLabel?: string;
+  daysLabel?: string;
 };
 
 // Use 480x480 images
 export default function MasterCard(props: MasterCardProps) {
-  const { image, on_hover_image, craft, name, city, country, price, days } =
+  const {
+    image,
+    on_hover_image,
+    craft,
+    name,
+    city,
+    country,
+    price,
+    days,
+    withLabel = 'with',
+    daysLabel = 'days',
+  } =
     props;
 
   return (
@@ -28,7 +41,7 @@ export default function MasterCard(props: MasterCardProps) {
       </div>
       <div className="space-y-4 p-4">
         <h2 className="text-xl">
-          {craft} con {name}
+          {craft} {withLabel} {name}
         </h2>
         <div>
           <p>
@@ -36,7 +49,7 @@ export default function MasterCard(props: MasterCardProps) {
           </p>
           <div className="space-x-4">
             <span>${price}</span>
-            <span>{days} días</span>
+            <span>{days} {daysLabel}</span>
           </div>
         </div>
       </div>

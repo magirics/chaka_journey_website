@@ -19,7 +19,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 });
 
 async function get_messages(locale: string) {
-    const [homePage, headerContent, footerContent] = await Promise.all([
+    const [homePage, headerContent, footerContent, usContent] = await Promise.all([
         fetchCollectionFirstDoc(
             `home?locale=${encodeURIComponent(locale)}&where[version][equals]=main`
         ),
@@ -29,12 +29,16 @@ async function get_messages(locale: string) {
         fetchCollectionFirstDoc(
             `footer?locale=${encodeURIComponent(locale)}&where[version][equals]=main`
         ),
+        fetchCollectionFirstDoc(
+            `us?locale=${encodeURIComponent(locale)}&where[version][equals]=main`
+        ),
     ]);
 
     const page = {
         Home: homePage,
         Header: headerContent,
         Footer: footerContent,
+        Us: usContent,
         FooterPages: footerPageMessages[locale] || footerPageMessages.en,
     };
 

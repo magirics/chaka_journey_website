@@ -16,7 +16,10 @@ import { Experiences } from './collections/Experiences'
 import { Home } from './collections/Home'
 import { Header } from './collections/Header'
 import { Footer } from './collections/Footer'
+import { Us } from './collections/Us'
 import { TypeformSubmissions } from './collections/TypeformSubmissions'
+import { Gifts } from './collections/Gifts'
+import { GiftOrders } from './collections/GiftOrders'
 
 
 dotenv.config()
@@ -38,7 +41,14 @@ const codespacesBaseOrigin =
     ? `https://${codespaceName}-3000.${codespacesDomain}`
     : undefined
 
-const serverURL = appUrl || payloadPublicUrl || 'http://localhost:3000'
+const serverURL = appUrl || payloadPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
+const serverHost = (() => {
+  try {
+    return new URL(serverURL).hostname
+  } catch {
+    return ''
+  }
+})()
 
 const devOrigins = [
   'http://localhost:3000',
@@ -62,7 +72,7 @@ const allowedOrigins = Array.from(
   new Set([...devOrigins, ...codespacesOrigins, appUrl, payloadPublicUrl].filter(Boolean) as string[]),
 )
 
-const isCodespacesHost = allowedOrigins.some((origin) => origin.includes('.app.github.dev'))
+const isCodespacesHost = serverHost.endsWith('.app.github.dev')
 
 export default buildConfig({
   sharp,
@@ -90,7 +100,7 @@ export default buildConfig({
     fallback: true,
   },
 
-  collections: [Users, Media, Reserves, Masters, Experiences, Home, Header, Footer, TypeformSubmissions],
+  collections: [Users, Media, Reserves, Masters, Gifts, GiftOrders, Experiences, Home, Header, Footer, Us, TypeformSubmissions],
   admin: {
     user: Users.slug,
     importMap: {
