@@ -32,9 +32,11 @@
     }
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "app/stripe/cancel/page.js",
+    "app/stripe/success/page.js",
+    "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [

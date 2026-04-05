@@ -2,10 +2,79 @@
 
 import "cally";
 
-export default function Calendar() {
+type AvailabilityRange = { from: string; to: string };
+
+function parseDateOnly(value: string): Date {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function getUtcDayTime(date: Date): number {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+export default function Calendar({
+  value,
+  setValue,
+  availability,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  availability?: AvailabilityRange[];
+}) {
+  const onChange = (e: any) => setValue((e.target as HTMLInputElement).value);
+
+  const isWithinAvailability = (date: Date): boolean => {
+    if (!availability || availability.length === 0) return false;
+
+    const currentDay = getUtcDayTime(date);
+
+    return availability.some(({ from, to }) => {
+      const startDay = getUtcDayTime(parseDateOnly(from));
+      const endDay = getUtcDayTime(parseDateOnly(to));
+      return currentDay >= startDay && currentDay <= endDay;
+    });
+  };
+
+  const isDateDisallowed = (date: Date): boolean => {
+    const today = getUtcDayTime(new Date());
+    const currentDay = getUtcDayTime(date);
+
+    if (currentDay < today) return true;
+
+    if (availability && availability.length > 0) {
+      return !isWithinAvailability(date);
+    }
+
+    return false;
+  };
+
+  const getDayParts = (date: Date): string => {
+    const parts: string[] = [];
+
+    if (isDateDisallowed(date)) parts.push("disallowed");
+    if (isWithinAvailability(date)) parts.push("available");
+
+    return parts.join(" ");
+  };
+
   return (
     <div className="inline-block p-6">
-      <calendar-range months={2}>
+      <style>
+        {`calendar-range calendar-month::part(disallowed) {
+          color: #ccc;
+          background-color: #f9f9f9;
+          cursor: not-allowed;
+        }
+
+        calendar-range calendar-month::part(available) {
+          background-color: #d8ead8;
+          color: #17351f;
+          font-weight: 600;
+          border-radius: 999px;
+        }`}
+      </style>
+      <calendar-range months={2} value={value} onchange={onChange} isDateDisallowed={isDateDisallowed} getDayParts={getDayParts}>
         <svg
           aria-label="Previous"
           slot="previous"
