@@ -1,7 +1,5 @@
 "use client";
 
-import "cally";
-
 type AvailabilityRange = { from: string; to: string };
 
 function parseDateOnly(value: string): Date {
@@ -17,6 +15,7 @@ export default function Calendar({
   value,
   setValue,
   availability,
+  readOnly
 }: {
   value: string;
   setValue: (v: string) => void;
@@ -66,13 +65,7 @@ export default function Calendar({
           background-color: #f9f9f9;
           cursor: not-allowed;
         }
-
-        calendar-range calendar-month::part(available) {
-          background-color: #d8ead8;
-          color: #17351f;
-          font-weight: 600;
-          border-radius: 999px;
-        }`}
+        `}
       </style>
       <calendar-range months={2} value={value} onchange={onChange} isDateDisallowed={isDateDisallowed} getDayParts={getDayParts}>
         <svg

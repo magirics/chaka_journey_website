@@ -19,6 +19,8 @@ type PayloadMaster = {
   country?: string;
   days?: number;
   price?: number;
+  guest_price?: number;
+  max_guests?: number;
   bio?: string;
   image?: {
     url?: string;
@@ -55,6 +57,7 @@ const masterUiByLocale: Record<string, {
   availability: string;
   availabilityHint: string;
   selectStayDays: string;
+  selectNumberOfGuests: string;
   pay: string;
 }> = {
   es: {
@@ -81,6 +84,7 @@ const masterUiByLocale: Record<string, {
     availability: 'Availability',
     availabilityHint: 'Check highlighted days in the calendar.',
     selectStayDays: 'Select your stay days',
+    selectNumberOfGuests: 'Select your number of guests',
     pay: 'Pay',
   },
   fr: {
@@ -123,6 +127,11 @@ export default function Master() {
   const masterIdFromParams = Array.isArray(params?.master)
     ? params.master[0]
     : params?.master;
+
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    import("cally").then(() => setReady(true));
+  }, []);
 
   useEffect(() => {
     if (!masterIdFromParams) return;
@@ -190,6 +199,8 @@ export default function Master() {
     const country = masterData?.country || "";
     const days = typeof masterData?.days === "number" ? masterData.days : 3;
     const price = typeof masterData?.price === "number" ? masterData.price : 1200;
+    const guestPrice = typeof masterData?.guest_price === "number" ? masterData.guest_price : 1200;
+    const maxGuests = typeof masterData?.max_guests === "number" ? masterData.max_guests : 2;
     const image =
       typeof masterData?.image === "object" && masterData?.image?.url
         ? masterData.image.url
@@ -205,18 +216,18 @@ export default function Master() {
     const availability = Array.isArray(masterData?.availability) ? masterData.availability : [];
     const galleryImages = Array.isArray(masterData?.gallery)
       ? masterData.gallery
-          .map((item) => {
-            if (!item || typeof item !== 'object') return '';
+        .map((item) => {
+          if (!item || typeof item !== 'object') return '';
 
-            const media = item.image;
-            if (media && typeof media === 'object' && typeof media.url === 'string') {
-              return media.url;
-            }
+          const media = item.image;
+          if (media && typeof media === 'object' && typeof media.url === 'string') {
+            return media.url;
+          }
 
-            return '';
-          })
-          .filter((url): url is string => Boolean(url))
-          .slice(0, 9)
+          return '';
+        })
+        .filter((url): url is string => Boolean(url))
+        .slice(0, 9)
       : [];
 
     return {
@@ -227,6 +238,8 @@ export default function Master() {
       country,
       days,
       price,
+      guestPrice,
+      maxGuests,
       image,
       bio,
       experienceIncludes,
@@ -262,7 +275,7 @@ export default function Master() {
     }
   }
 
-  const handlePay = async (range: string) => {
+  const handlePay = async (range: string, guests: number) => {
     console.log('Selected range', range)
     let startDate = null; let endDate = null;
     if (typeof range === 'string') {
@@ -282,7 +295,7 @@ export default function Master() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
-        price: content.price,
+        price: content.price + guests * content.guestPrice,
         days: content.days,
         masterId,
         startDate,
@@ -331,8 +344,8 @@ export default function Master() {
             <div className="divider md:hidden" />
             <Pricing
               price={content.price}
-              guestPrice={230}
-              maxGuests={4}
+              guestPrice={content.guestPrice}
+              maxGuests={content.maxGuests}
               onReserve={handleReserve}
               onSave={handleSave}
               isSaved={isSaved}
@@ -341,7 +354,9 @@ export default function Master() {
               onPay={handlePay}
               availability={content.availability}
               selectStayDaysLabel={ui.selectStayDays}
+              selectNumberOfGuestsLabel={ui.selectNumberOfGuests}
               payLabel={ui.pay}
+              maxGuests={content.maxGuests}
             />
           </div>
         </div>
@@ -372,9 +387,7 @@ export default function Master() {
           </div>
         )}
         <div className="mb-8 flex justify-center">
-          <Lazy>
-            <Calendar value={value} setValue={setValue} availability={content.availability} />
-          </Lazy>
+          {ready && <Calendar value={value} setValue={setValue} availability={content.availability} />}
         </div>
       </main>
     </>
@@ -403,22 +416,38 @@ function ReserveDialog({
   onPay,
   availability,
   selectStayDaysLabel,
+  selectNumberOfGuestsLabel,
   payLabel,
+  maxGuests
 }: {
-  onPay: (range: string) => void;
+  onPay: (range: string, price: number) => void;
   availability?: Array<{ from: string; to: string }>;
   selectStayDaysLabel: string;
+  selectNumberOfGuestsLabel: string;
   payLabel: string;
+  maxGuests: number;
 }) {
-  const [value, setValue] = useState("")
+
+  const [range, setRange] = useState("");
 
   return <dialog id="id_reserve_button" className="modal">
     <div className="modal-box rounded-none min-w-160 flex flex-col">
       <h3 className="font-bold text-lg">{selectStayDaysLabel}</h3>
       <div className="flex justify-center">
-        <Calendar value={value} setValue={setValue} availability={availability} />
+        <Calendar value={range} setValue={setRange} availability={availability} />
       </div>
-      <button className="btn btn-primary w-30 self-end" onClick={() => onPay(value)}>{payLabel}</button>
+
+      <h3 className="font-bold text-lg">{selectNumberOfGuestsLabel}</h3>
+      <div className="m-6">
+        <input name='max_guests' type="number" className="input" defaultValue={0} min={0} max={maxGuests} />
+      </div>
+
+      <button className="btn btn-primary w-30 self-end" onClick={() => {
+        const guestsElement = document.getElementsByName('max_guests')[0]
+        const guests = guestsElement.value;
+        if (range != '')
+          onPay(range, guests)
+      }}>{payLabel}</button>
     </div>
 
     <form method="dialog" className="modal-backdrop">
