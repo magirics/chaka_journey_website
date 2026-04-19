@@ -71,6 +71,7 @@ const masterUiByLocale: Record<string, {
     availability: 'Disponibilidad',
     availabilityHint: 'Consulta los dias resaltados en el calendario.',
     selectStayDays: 'Selecciona los dias de tu estancia',
+    selectNumberOfGuests: 'Selecciona el numero de invitados',
     pay: 'Pagar',
   },
   en: {
@@ -98,6 +99,7 @@ const masterUiByLocale: Record<string, {
     availability: 'Disponibilite',
     availabilityHint: 'Consultez les jours mis en evidence dans le calendrier.',
     selectStayDays: 'Selectionnez les jours de votre sejour',
+    selectNumberOfGuests: 'Selectionnez le nombre de convives',
     pay: 'Payer',
   },
   de: {
@@ -111,6 +113,7 @@ const masterUiByLocale: Record<string, {
     availability: 'Verfugbarkeit',
     availabilityHint: 'Prufe die markierten Tage im Kalender.',
     selectStayDays: 'Wahle die Tage deines Aufenthalts',
+    selectNumberOfGuests: 'Wahle die Anzahl der Gaste',
     pay: 'Bezahlen',
   },
 };
@@ -443,10 +446,10 @@ function ReserveDialog({
       </div>
 
       <button className="btn btn-primary w-30 self-end" onClick={() => {
-        const guestsElement = document.getElementsByName('max_guests')[0]
-        const guests = guestsElement.value;
-        if (range != '')
-          onPay(range, guests)
+        const guestsElement = document.getElementsByName('max_guests')[0] as HTMLInputElement | undefined;
+        const guests = guestsElement?.value || "";
+        if (range !== "")
+          onPay(range, guests);
       }}>{payLabel}</button>
     </div>
 
