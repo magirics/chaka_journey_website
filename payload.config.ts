@@ -33,6 +33,7 @@ const normalizeUrl = (value?: string) => {
 
 const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL)
 const payloadPublicUrl = normalizeUrl(process.env.PAYLOAD_PUBLIC_SERVER_URL)
+const isProduction = process.env.NODE_ENV === 'production'
 
 const codespaceName = process.env.CODESPACE_NAME
 const codespacesDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
@@ -41,7 +42,13 @@ const codespacesBaseOrigin =
     ? `https://${codespaceName}-3000.${codespacesDomain}`
     : undefined
 
-const serverURL = appUrl || payloadPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
+const devServerURL =
+  normalizeUrl(process.env.PAYLOAD_DEV_SERVER_URL) ||
+  `http://localhost:${process.env.PORT || '3000'}`
+
+const serverURL = isProduction
+  ? appUrl || payloadPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
+  : devServerURL
 const serverHost = (() => {
   try {
     return new URL(serverURL).hostname
@@ -106,12 +113,13 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    suppressHydrationWarning: true,
     ...(isCodespacesHost
       ? {
           cookies: {
-            sameSite: 'none',
-            secure: true,
-            domain: '.app.github.dev',
+            // Use host-only cookies in Codespaces to avoid domain rejection/login loops.
+            sameSite: 'lax',
+            secure: isProduction,
           },
         }
       : {}),
@@ -119,7 +127,8 @@ export default buildConfig({
 
   secret: process.env.PAYLOAD_SECRET || '',
   serverURL,
-  cookiePrefix: 'payload',
+  // Avoid conflicts with stale/default Payload cookies from other local sessions.
+  cookiePrefix: 'chaka',
   cors: allowedOrigins,
   csrf: allowedOrigins,
 

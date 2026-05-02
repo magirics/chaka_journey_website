@@ -1,9 +1,8 @@
+import { headers } from 'next/headers';
 import { getRequestConfig } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { routing } from './routing';
 import { footerPageMessages } from './footerPages';
-
-const apiBaseUrls = resolveApiBaseUrls();
 
 export default getRequestConfig(async ({ requestLocale }) => {
     // Typically corresponds to the `[locale]` segment
@@ -46,6 +45,8 @@ async function get_messages(locale: string) {
 }
 
 async function fetchCollectionFirstDoc(query: string) {
+    const apiBaseUrls = await resolveApiBaseUrls();
+
     try {
         return await Promise.any(
             apiBaseUrls.map((baseUrl) => fetchDocFromBaseUrl(baseUrl, query))
@@ -56,29 +57,80 @@ async function fetchCollectionFirstDoc(query: string) {
 }
 
 async function fetchDocFromBaseUrl(baseUrl: string, query: string) {
-    const res = await fetch(`${baseUrl}/api/${query}`, {
-        next: { revalidate: 120 },
-        signal: AbortSignal.timeout(4500),
-    });
+    const endpoint = `${baseUrl}/api/${query}`;
+    let lastError: unknown;
 
-    if (!res.ok) {
-        throw new Error(`Non-OK response from ${baseUrl}`);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            const res = await fetch(endpoint, {
+                next: { revalidate: 120 },
+                signal: AbortSignal.timeout(4500),
+            });
+
+            if (!res.ok) {
+                throw new Error(`Non-OK response from ${baseUrl}`);
+            }
+
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error(`Invalid content type from ${baseUrl}`);
+            }
+
+            const body = await res.json();
+            return normalizeLocalhostUrls(body?.docs?.[0] || {});
+        } catch (error) {
+            lastError = error;
+
+            const serialized = String(error);
+            const isRetryableNetworkError =
+                serialized.includes('UND_ERR_SOCKET') ||
+                serialized.includes('ECONNRESET') ||
+                serialized.includes('fetch failed');
+
+            if (!isRetryableNetworkError || attempt === 1) {
+                throw error;
+            }
+        }
     }
 
-    const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-        throw new Error(`Invalid content type from ${baseUrl}`);
-    }
-
-    const body = await res.json();
-    return body?.docs?.[0] || {};
+    throw lastError instanceof Error ? lastError : new Error(`Failed to fetch ${endpoint}`);
 }
 
-function resolveApiBaseUrls() {
+function normalizeLocalhostUrls<T>(value: T): T {
+    if (Array.isArray(value)) {
+        return value.map((item) => normalizeLocalhostUrls(item)) as T;
+    }
+
+    if (value && typeof value === 'object') {
+        const normalizedEntries = Object.entries(value as Record<string, unknown>).map(
+            ([key, entryValue]) => [key, normalizeLocalhostUrls(entryValue)]
+        );
+
+        return Object.fromEntries(normalizedEntries) as T;
+    }
+
+    if (typeof value === 'string') {
+        const localhostMatch = value.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/.*)$/i);
+        if (localhostMatch) {
+            return localhostMatch[3] as T;
+        }
+    }
+
+    return value;
+}
+
+async function resolveApiBaseUrls() {
+    const requestHeaders = await headers();
+    const host = requestHeaders.get('host');
+    const forwardedProto = requestHeaders.get('x-forwarded-proto') || 'https';
+    const requestOrigin = host ? `${forwardedProto}://${host}` : undefined;
+
     const candidates = [
+        requestOrigin,
         process.env.NEXT_PUBLIC_APP_URL,
         process.env.PAYLOAD_PUBLIC_SERVER_URL,
         process.env.NEXT_PUBLIC_PAYLOAD_URL,
+        'http://localhost:3000',
         'http://127.0.0.1:3000',
     ];
 

@@ -167,7 +167,7 @@ const SAVED_MASTERS_STORAGE_KEY = 'chaka_favorite_masters';
 export default function Masters() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { replace } = useRouter();
+  const { replace, push } = useRouter();
   const locale = useLocale();
   const ui = mastersUiByLocale[locale] || mastersUiByLocale.en;
   const [masters, setMasters] = useState<MasterCardData[]>([]);
@@ -253,25 +253,9 @@ export default function Masters() {
     };
   }, [locale, ui.defaultCraft, ui.defaultName]);
 
-  // 🔹 Checkout handler
-  const handleClick = async (master: MasterCardData) => {
-    const res = await fetch("/stripe/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: master.name,
-        price: master.price,
-        days: master.days,
-        masterId: master.id || master.image,
-      }),
-    });
-
-    const data = await res.json();
-    if (data?.url) {
-      window.location.href = data.url;
-    } else {
-      console.error("Error en checkout:", data);
-    }
+  // Redirect reserve action to the master detail page with calendar flow.
+  const handleClick = (master: MasterCardData) => {
+    push(`/masters/${master.id}?reserve=1`);
   };
 
   const toggleSaveMaster = (masterId: string) => {
@@ -286,7 +270,7 @@ export default function Masters() {
     });
   };
 
-  // 🔹 Search handler
+  
   const handleChange = useDebouncedCallback((ev: React.SyntheticEvent) => {
     const searchText = (ev.target as HTMLInputElement).value.toLowerCase();
 

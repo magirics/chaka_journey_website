@@ -3,8 +3,8 @@
 import Lazy from "@/Lazy";
 import Calendar from "@/ui/Calendar";
 import Pricing from "@/ui/Pricing";
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useSearchParams } from 'next/navigation';
 import { useLocale } from "next-intl";
 
 type PayloadMaster = {
@@ -59,6 +59,8 @@ const masterUiByLocale: Record<string, {
   selectStayDays: string;
   selectNumberOfGuests: string;
   pay: string;
+  selectStayDaysAlert: string;
+  alertConfirm: string;
 }> = {
   es: {
     withLabel: 'con',
@@ -73,6 +75,8 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Selecciona los dias de tu estancia',
     selectNumberOfGuests: 'Selecciona el numero de invitados',
     pay: 'Pagar',
+    selectStayDaysAlert: 'Por favor selecciona los dias de tu estancia antes de pagar.',
+    alertConfirm: 'Aceptar',
   },
   en: {
     withLabel: 'with',
@@ -87,6 +91,8 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Select your stay days',
     selectNumberOfGuests: 'Select your number of guests',
     pay: 'Pay',
+    selectStayDaysAlert: 'Please select your stay dates before paying.',
+    alertConfirm: 'OK',
   },
   fr: {
     withLabel: 'avec',
@@ -101,6 +107,8 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Selectionnez les jours de votre sejour',
     selectNumberOfGuests: 'Selectionnez le nombre de convives',
     pay: 'Payer',
+    selectStayDaysAlert: 'Veuillez selectionner les dates de votre sejour avant de payer.',
+    alertConfirm: 'OK',
   },
   de: {
     withLabel: 'mit',
@@ -115,6 +123,8 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Wahle die Tage deines Aufenthalts',
     selectNumberOfGuests: 'Wahle die Anzahl der Gaste',
     pay: 'Bezahlen',
+    selectStayDaysAlert: 'Bitte wahle vor dem Bezahlen deine Aufenthaltstage aus.',
+    alertConfirm: 'OK',
   },
 };
 
@@ -123,8 +133,10 @@ export default function Master() {
   const [masterData, setMasterData] = useState<PayloadMaster | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const ui = masterUiByLocale[locale] || masterUiByLocale.en;
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const hasAutoOpenedReserve = useRef(false);
 
   const params = useParams();
   const masterIdFromParams = Array.isArray(params?.master)
@@ -255,8 +267,21 @@ export default function Master() {
 
   const handleReserve = () => {
     const dlg = document.getElementById('id_reserve_button') as HTMLDialogElement | null;
-    dlg?.showModal();
+    if (dlg && !dlg.open) {
+      dlg.showModal();
+    }
   }
+
+  useEffect(() => {
+    if (searchParams.get('reserve') !== '1') return;
+    if (hasAutoOpenedReserve.current) return;
+
+    const dlg = document.getElementById('id_reserve_button') as HTMLDialogElement | null;
+    if (!dlg || dlg.open) return;
+
+    dlg.showModal();
+    hasAutoOpenedReserve.current = true;
+  }, [searchParams]);
 
   const handleSave = () => {
     const currentMasterId = String(masterIdFromParams || masterData?.id || '');
@@ -359,6 +384,8 @@ export default function Master() {
               selectStayDaysLabel={ui.selectStayDays}
               selectNumberOfGuestsLabel={ui.selectNumberOfGuests}
               payLabel={ui.pay}
+              selectStayDaysAlert={ui.selectStayDaysAlert}
+              alertConfirmLabel={ui.alertConfirm}
               maxGuests={content.maxGuests}
             />
           </div>
@@ -421,6 +448,8 @@ function ReserveDialog({
   selectStayDaysLabel,
   selectNumberOfGuestsLabel,
   payLabel,
+  selectStayDaysAlert,
+  alertConfirmLabel,
   maxGuests
 }: {
   onPay: (range: string, price: number) => void;
@@ -428,16 +457,45 @@ function ReserveDialog({
   selectStayDaysLabel: string;
   selectNumberOfGuestsLabel: string;
   payLabel: string;
+  selectStayDaysAlert: string;
+  alertConfirmLabel: string;
   maxGuests: number;
 }) {
 
   const [range, setRange] = useState("");
+  const [showMissingDatesPopup, setShowMissingDatesPopup] = useState(false);
 
   return <dialog id="id_reserve_button" className="modal">
-    <div className="modal-box rounded-none min-w-160 flex flex-col">
+    <div className="modal-box rounded-none min-w-160 relative flex flex-col">
+      {showMissingDatesPopup && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 px-6">
+          <div className="w-full max-w-md rounded-lg border border-[#cc9966] bg-[#1e130d] p-5 text-white shadow-lg">
+            <p className="text-sm leading-6">{selectStayDaysAlert}</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowMissingDatesPopup(false)}
+              >
+                {alertConfirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h3 className="font-bold text-lg">{selectStayDaysLabel}</h3>
       <div className="flex justify-center">
-        <Calendar value={range} setValue={setRange} availability={availability} />
+        <Calendar
+          value={range}
+          setValue={(nextValue) => {
+            setRange(nextValue);
+            if (nextValue !== "" && showMissingDatesPopup) {
+              setShowMissingDatesPopup(false);
+            }
+          }}
+          availability={availability}
+        />
       </div>
 
       <h3 className="font-bold text-lg">{selectNumberOfGuestsLabel}</h3>
@@ -447,9 +505,13 @@ function ReserveDialog({
 
       <button className="btn btn-primary w-30 self-end" onClick={() => {
         const guestsElement = document.getElementsByName('max_guests')[0] as HTMLInputElement | undefined;
-        const guests = guestsElement?.value || "";
-        if (range !== "")
-          onPay(range, guests);
+        const guests = Number(guestsElement?.value || 0);
+        if (range === "") {
+          setShowMissingDatesPopup(true);
+          return;
+        }
+
+        onPay(range, guests);
       }}>{payLabel}</button>
     </div>
 
