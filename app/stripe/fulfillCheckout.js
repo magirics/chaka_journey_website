@@ -4,6 +4,21 @@ import nodemailer from 'nodemailer';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+function normalizeRelationshipId(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return trimmed;
+  }
+  if (typeof value === 'object' && value?.value !== undefined) {
+    return normalizeRelationshipId(value.value);
+  }
+  return value;
+}
+
+
 export async function fulfillCheckout(sessionId) {
   console.log('🔔 Fulfillment iniciado para sessionId:', sessionId);
 
@@ -40,7 +55,7 @@ export async function fulfillCheckout(sessionId) {
     }
 
     // Intentar leer metadata enviada desde create-checkout-session
-    const masterId = checkoutSession.metadata?.masterId || null;
+    const masterId = normalizeRelationshipId(checkoutSession.metadata?.masterId);
     const startDate = checkoutSession.metadata?.startDate || null;
     const endDate = checkoutSession.metadata?.endDate || null;
     const giftId = checkoutSession.metadata?.giftId || null;
@@ -65,6 +80,20 @@ export async function fulfillCheckout(sessionId) {
       deliveryFee,
     });
 
+    // Resolve master using Payload to get the canonical ID type expected by relationships.
+    let resolvedMasterId = null;
+    if (masterId) {
+      try {
+        const masterDoc = await payload.findByID({
+          collection: 'masters',
+          id: masterId,
+        });
+        resolvedMasterId = masterDoc?.id ?? null;
+      } catch (err) {
+        console.warn('FulfillCheckout: master not found with metadata masterId:', masterId, err?.message || err);
+      }
+    }
+
     // 3️⃣ Crear transacción de regalo
     let savedOrder;
     if (checkoutType === 'gift') {
@@ -82,7 +111,7 @@ export async function fulfillCheckout(sessionId) {
         collection: 'gift-orders',
         data: {
           gift: giftId,
-          ...(masterId ? { master: masterId } : {}),
+          ...(resolvedMasterId ? { master: String(resolvedMasterId) } : {}),
           customerEmail,
           recipientName,
           ...(deliveryAddress ? { deliveryAddress } : {}),
@@ -106,12 +135,31 @@ export async function fulfillCheckout(sessionId) {
         return;
       }
 
+      // Idempotencia: evita crear una segunda reserva para la misma sesión de Stripe.
+      const existingReserve = await payload.find({
+        collection: 'reserves',
+        where: {
+          stripeSessionId: {
+            equals: sessionId,
+          },
+        },
+        limit: 1,
+      });
+
+      if (existingReserve.totalDocs > 0) {
+        console.log('FulfillCheckout: reserva ya existente para esta sesión, omitiendo creación.', {
+          sessionId,
+          reserveId: existingReserve.docs[0]?.id,
+        });
+        return;
+      }
+
       // 4️⃣ Crear la reserva en Payload
       console.log('FulfillCheckout: creando reserva en Payload con:', {
         stripeSessionId: sessionId,
         customerEmail,
         amount,
-        masterId,
+        masterId: resolvedMasterId,
         startDate,
         endDate,
       });
@@ -122,7 +170,7 @@ export async function fulfillCheckout(sessionId) {
           stripeSessionId: sessionId,
           customerEmail,
           status: 'paid',
-          ...(masterId ? { master: masterId } : {}),
+          ...(resolvedMasterId ? { masterRef: String(resolvedMasterId) } : {}),
           ...(startDate ? { startDate } : {}),
           ...(endDate ? { endDate } : {}),
         },

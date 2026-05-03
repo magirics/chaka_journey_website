@@ -26,6 +26,7 @@ dotenv.config()
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+
 const normalizeUrl = (value?: string) => {
   if (!value) return undefined
   return value.replace(/\/+$/, '')

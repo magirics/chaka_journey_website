@@ -146,18 +146,6 @@ function FavoritesCounterIcon() {
 
   const isEnabled = count > 0;
 
-  useEffect(() => {
-    if (!isEnabled) return;
-
-    const intervalId = window.setInterval(() => {
-      triggerPop();
-    }, 7000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [isEnabled]);
-
   if (!isEnabled) return null;
 
   return (

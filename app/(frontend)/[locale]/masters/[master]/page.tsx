@@ -60,6 +60,7 @@ const masterUiByLocale: Record<string, {
   selectNumberOfGuests: string;
   pay: string;
   selectStayDaysAlert: string;
+  guestLimitAlert: string;
   alertConfirm: string;
 }> = {
   es: {
@@ -76,6 +77,7 @@ const masterUiByLocale: Record<string, {
     selectNumberOfGuests: 'Selecciona el numero de invitados',
     pay: 'Pagar',
     selectStayDaysAlert: 'Por favor selecciona los dias de tu estancia antes de pagar.',
+    guestLimitAlert: 'La cantidad de invitados se ha restringido a {max} porque ese es el maximo permitido por este maestro.',
     alertConfirm: 'Aceptar',
   },
   en: {
@@ -92,6 +94,7 @@ const masterUiByLocale: Record<string, {
     selectNumberOfGuests: 'Select your number of guests',
     pay: 'Pay',
     selectStayDaysAlert: 'Please select your stay dates before paying.',
+    guestLimitAlert: 'The number of guests has been limited to {max} because that is the maximum allowed by this master.',
     alertConfirm: 'OK',
   },
   fr: {
@@ -108,6 +111,7 @@ const masterUiByLocale: Record<string, {
     selectNumberOfGuests: 'Selectionnez le nombre de convives',
     pay: 'Payer',
     selectStayDaysAlert: 'Veuillez selectionner les dates de votre sejour avant de payer.',
+    guestLimitAlert: 'Le nombre d\'invites a ete limite a {max}, car c\'est le maximum autorise par ce maitre.',
     alertConfirm: 'OK',
   },
   de: {
@@ -124,6 +128,7 @@ const masterUiByLocale: Record<string, {
     selectNumberOfGuests: 'Wahle die Anzahl der Gaste',
     pay: 'Bezahlen',
     selectStayDaysAlert: 'Bitte wahle vor dem Bezahlen deine Aufenthaltstage aus.',
+    guestLimitAlert: 'Die Anzahl der Gaste wurde auf {max} begrenzt, da dies die maximale Anzahl fur diesen Meister ist.',
     alertConfirm: 'OK',
   },
 };
@@ -303,6 +308,21 @@ export default function Master() {
     }
   }
 
+  const getSelectedDayCount = (startDate: string | null, endDate: string | null) => {
+    if (!startDate || !endDate) return 0;
+
+    const parseDateOnly = (value: string) => {
+      const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+      return Date.UTC(year, month - 1, day);
+    };
+
+    const start = parseDateOnly(startDate);
+    const end = parseDateOnly(endDate);
+    const diffInDays = Math.round((end - start) / 86400000);
+
+    return Math.abs(diffInDays) + 1;
+  };
+
   const handlePay = async (range: string, guests: number) => {
     console.log('Selected range', range)
     let startDate = null; let endDate = null;
@@ -316,15 +336,17 @@ export default function Master() {
       }
     }
 
+    const selectedDays = getSelectedDayCount(startDate, endDate);
+
     const masterId = masterIdFromParams || masterData?.id || 'unknown-master';
 
     const res = await fetch('/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name,
+        name: content.title,
         price: content.price + guests * content.guestPrice,
-        days: content.days,
+        days: selectedDays || content.days,
         masterId,
         startDate,
         endDate,
@@ -385,6 +407,7 @@ export default function Master() {
               selectNumberOfGuestsLabel={ui.selectNumberOfGuests}
               payLabel={ui.pay}
               selectStayDaysAlert={ui.selectStayDaysAlert}
+              guestLimitAlert={ui.guestLimitAlert}
               alertConfirmLabel={ui.alertConfirm}
               maxGuests={content.maxGuests}
             />
@@ -449,21 +472,32 @@ function ReserveDialog({
   selectNumberOfGuestsLabel,
   payLabel,
   selectStayDaysAlert,
+  guestLimitAlert,
   alertConfirmLabel,
   maxGuests
 }: {
-  onPay: (range: string, price: number) => void;
+  onPay: (range: string, guests: number) => void;
   availability?: Array<{ from: string; to: string }>;
   selectStayDaysLabel: string;
   selectNumberOfGuestsLabel: string;
   payLabel: string;
   selectStayDaysAlert: string;
+  guestLimitAlert: string;
   alertConfirmLabel: string;
   maxGuests: number;
 }) {
+  const normalizedMaxGuests = Math.max(0, maxGuests);
+  const clampGuests = (value: number) => {
+    if (!Number.isFinite(value)) return 0;
+    return Math.min(normalizedMaxGuests, Math.max(0, value));
+  };
 
   const [range, setRange] = useState("");
+  const [guests, setGuests] = useState(0);
   const [showMissingDatesPopup, setShowMissingDatesPopup] = useState(false);
+  const [showGuestLimitPopup, setShowGuestLimitPopup] = useState(false);
+
+  const guestLimitAlertMessage = guestLimitAlert.replace('{max}', String(normalizedMaxGuests));
 
   return <dialog id="id_reserve_button" className="modal">
     <div className="modal-box rounded-none min-w-160 relative flex flex-col">
@@ -476,6 +510,23 @@ function ReserveDialog({
                 type="button"
                 className="btn btn-primary"
                 onClick={() => setShowMissingDatesPopup(false)}
+              >
+                {alertConfirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGuestLimitPopup && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 px-6">
+          <div className="w-full max-w-md rounded-lg border border-[#cc9966] bg-[#1e130d] p-5 text-white shadow-lg">
+            <p className="text-sm leading-6">{guestLimitAlertMessage}</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowGuestLimitPopup(false)}
               >
                 {alertConfirmLabel}
               </button>
@@ -500,18 +551,30 @@ function ReserveDialog({
 
       <h3 className="font-bold text-lg">{selectNumberOfGuestsLabel}</h3>
       <div className="m-6">
-        <input name='max_guests' type="number" className="input" defaultValue={0} min={0} max={maxGuests} />
+        <input
+          name='max_guests'
+          type="number"
+          className="input"
+          value={guests}
+          min={0}
+          max={normalizedMaxGuests}
+          onChange={(event) => {
+            const nextGuests = Number(event.target.value);
+            if (Number.isFinite(nextGuests) && nextGuests > normalizedMaxGuests) {
+              setShowGuestLimitPopup(true);
+            }
+            setGuests(clampGuests(nextGuests));
+          }}
+        />
       </div>
 
       <button className="btn btn-primary w-30 self-end" onClick={() => {
-        const guestsElement = document.getElementsByName('max_guests')[0] as HTMLInputElement | undefined;
-        const guests = Number(guestsElement?.value || 0);
         if (range === "") {
           setShowMissingDatesPopup(true);
           return;
         }
 
-        onPay(range, guests);
+        onPay(range, clampGuests(guests));
       }}>{payLabel}</button>
     </div>
 

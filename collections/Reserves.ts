@@ -1,5 +1,38 @@
 import type { CollectionConfig, CollectionSlug } from 'payload';
 
+type RelationshipId = string | null | undefined;
+
+function normalizeRelationshipId(value: unknown): RelationshipId {
+  if (value === null || value === undefined) return value;
+
+  if (typeof value === 'object') {
+    const relationValue = (value as { value?: unknown }).value;
+    return normalizeRelationshipId(relationValue);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    return trimmed;
+  }
+
+  if (typeof value === 'number') {
+    return String(value);
+  }
+
+  return null;
+}
+
+function startOfUtcDay(input: string | Date) {
+  const date = new Date(input);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+}
+
+function endOfUtcDay(input: string | Date) {
+  const date = new Date(input);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+}
+
 export const Reserves: CollectionConfig = {
   slug: 'reserves',
   admin: {
@@ -11,6 +44,11 @@ export const Reserves: CollectionConfig = {
       name: 'master',
       type: 'relationship',
       relationTo: 'masters' as CollectionSlug,
+      required: false,
+    },
+    {
+      name: 'masterRef',
+      type: 'text',
       required: true,
     },
     {
@@ -45,19 +83,20 @@ export const Reserves: CollectionConfig = {
       async ({ data, req, operation }) => {
         if (operation !== 'create') return;
 
-          const { master, startDate, endDate } = data;
+          const { master, masterRef: incomingMasterRef, startDate, endDate } = data;
 
-          // "master" can come as a string ID, or as a polymorphic relation
-          // object { relationTo: 'masters', value: 'id' } depending on how
-          // the client submitted the value (admin UI vs REST body).
-          // Normalize to a single ID string here.
-          const masterId = (typeof master === 'object' && master?.value) ? master.value : master;
+          // "master" can come as a primitive ID or as relation object.
+          // Normalize to a single primitive ID for all downstream checks.
+          const masterId = normalizeRelationshipId(incomingMasterRef ?? master);
+          data.masterRef = masterId;
 
           // Diagnostics: log raw master and normalized ID (use payload logger if available)
           try {
             const logger = req?.payload?.logger || console;
-            logger.info && logger.info('Reserves beforeChange: incoming master value:', master);
-            logger.info && logger.info('Reserves beforeChange: normalized masterId:', masterId);
+            if (logger.info) {
+              logger.info(`Reserves beforeChange: incoming master value: ${JSON.stringify(master)}`);
+              logger.info(`Reserves beforeChange: normalized masterId: ${JSON.stringify(masterId)}`);
+            }
           } catch (err) {
             console.log('Reserves beforeChange: logger error', err);
           }
@@ -82,17 +121,20 @@ export const Reserves: CollectionConfig = {
           throw new Error('El maestro no tiene disponibilidad configurada.');
         }
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = startOfUtcDay(startDate);
+        const end = endOfUtcDay(endDate);
 
         // ------------------------------------------
         // 2. Validar que el rango está dentro de disponibilidad
         //    Aquí usamos "from" y "to" que es como lo definiste
         // ------------------------------------------
         const isInsideAvailability = masterAvailability.some((a: { from: string; to: string }) => {
+          const availableFrom = startOfUtcDay(a.from);
+          const availableTo = endOfUtcDay(a.to);
+
           return (
-            start >= new Date(a.from) &&
-            end <= new Date(a.to)
+            start >= availableFrom &&
+            end <= availableTo
           );
         });
 
@@ -107,7 +149,12 @@ export const Reserves: CollectionConfig = {
           collection: 'reserves' as CollectionSlug,
           where: {
             and: [
-              { master: { equals: masterId } },
+              {
+                or: [
+                  { masterRef: { equals: masterId } },
+                  { master: { equals: masterId } },
+                ],
+              },
               { startDate: { less_than_equal: endDate } },
               { endDate: { greater_than_equal: startDate } },
             ],

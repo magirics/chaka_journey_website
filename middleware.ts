@@ -17,6 +17,10 @@ export default function middleware(request: NextRequest) {
       url.pathname = '/admin';
       return NextResponse.redirect(url);
     }
+
+    // Keep Payload login unlocalized. Otherwise next-intl redirects
+    // /admin/login -> /{locale}/admin/login, which redirects back again.
+    return NextResponse.next();
   }
 
   // Backward compatibility for outdated plural routes.
