@@ -27,6 +27,10 @@ export default function Navbar() {
   const locale = useLocale();
   const messages = useMessages() as Record<string, any>;
   const header = (messages?.Header as Record<string, any>) || {};
+  const logoSrc =
+    header?.logo && typeof header.logo === "object" && typeof header.logo.url === "string"
+      ? header.logo.url
+      : undefined;
   const announcement = announcementByLocale[locale] || announcementByLocale.en;
 
   const navLinks = Array.isArray(header?.links) && header.links.length > 0
@@ -54,8 +58,8 @@ export default function Navbar() {
 
   return (
     <>
-      <MobileNavbar navLinks={navLinks} socialLinks={socialLinks} />
-      <DesktopNavbar navLinks={navLinks} socialLinks={socialLinks} />
+      <MobileNavbar navLinks={navLinks} socialLinks={socialLinks} logoSrc={logoSrc} />
+      <DesktopNavbar navLinks={navLinks} socialLinks={socialLinks} logoSrc={logoSrc} />
       <AnnouncementBar message={announcement} />
     </>
   );
@@ -198,9 +202,11 @@ export function NavIcon({ href, icon, label }: NavIconProps) {
 export function MobileNavbar({
   navLinks,
   socialLinks,
+  logoSrc,
 }: {
   navLinks: Array<{ href: string; text: string }>;
   socialLinks: Array<{ href: string; icon: string; label: string }>;
+  logoSrc?: string;
 }) {
   const [visible, setVisible] = useState(false);
   const right = visible ? "0%" : "100%";
@@ -208,7 +214,7 @@ export function MobileNavbar({
 
   return (
     <div className={`sticky top-0 left-0 z-10 h-12 md:hidden ${vawaaSans.className}`}>
-      <NavHead handleMinimize={handleMinimize} />
+      <NavHead handleMinimize={handleMinimize} logoSrc={logoSrc} />
       <div
         className="fixed transition-transform duration-100"
         style={{
@@ -225,11 +231,17 @@ export function MobileNavbar({
   );
 }
 
-function NavHead({ handleMinimize }: { handleMinimize: MouseEventHandler }) {
+function NavHead({
+  handleMinimize,
+  logoSrc,
+}: {
+  handleMinimize: MouseEventHandler;
+  logoSrc?: string;
+}) {
   return (
     <nav className="bg-base-100 flex h-12 w-screen flex-row px-4">
       <div className="mr-4 flex flex-row items-center">
-        <Logo />
+        <Logo src={logoSrc} />
       </div>
       <div className="grow" />
       <button onClick={handleMinimize}>
@@ -262,14 +274,16 @@ function NavBody({
 export function DesktopNavbar({
   navLinks,
   socialLinks,
+  logoSrc,
 }: {
   navLinks: Array<{ href: string; text: string }>;
   socialLinks: Array<{ href: string; icon: string; label: string }>;
+  logoSrc?: string;
 }) {
   return (
     <nav className={`bg-base-100 sticky top-0 left-0 z-10 hidden h-12 w-screen flex-row items-center px-4 md:flex ${vawaaSans.className}`}>
       <div className="mr-4 flex flex-row items-center">
-        <Logo />
+        <Logo src={logoSrc} />
       </div>
       <ul className="flex flex-row items-center gap-8">
         <NavLinks links={navLinks} />
