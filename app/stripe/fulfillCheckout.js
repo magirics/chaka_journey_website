@@ -18,6 +18,40 @@ function normalizeRelationshipId(value) {
   return value;
 }
 
+async function resolveCollectionDocId(collection, rawId) {
+  const normalized = normalizeRelationshipId(rawId);
+  if (!normalized) return null;
+
+  const candidates = [normalized];
+  if (typeof normalized === 'string' && /^\d+$/.test(normalized)) {
+    candidates.push(Number(normalized));
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const doc = await payload.findByID({
+        collection,
+        id: candidate,
+      });
+      if (doc?.id !== undefined && doc?.id !== null) {
+        return doc.id;
+      }
+    } catch {
+      
+    }
+  }
+
+  return null;
+}
+
+function toRelationshipValue(id) {
+  if (typeof id === 'string' && /^\d+$/.test(id)) {
+    return Number(id);
+  }
+
+  return id;
+}
+
 
 export async function fulfillCheckout(sessionId) {
   console.log('🔔 Fulfillment iniciado para sessionId:', sessionId);
@@ -55,7 +89,7 @@ export async function fulfillCheckout(sessionId) {
     }
 
     // Intentar leer metadata enviada desde create-checkout-session
-    const masterId = normalizeRelationshipId(checkoutSession.metadata?.masterId);
+    const masterId = checkoutSession.metadata?.masterId || null;
     const startDate = checkoutSession.metadata?.startDate || null;
     const endDate = checkoutSession.metadata?.endDate || null;
     const giftId = checkoutSession.metadata?.giftId || null;
@@ -80,18 +114,10 @@ export async function fulfillCheckout(sessionId) {
       deliveryFee,
     });
 
-    // Resolve master using Payload to get the canonical ID type expected by relationships.
-    let resolvedMasterId = null;
-    if (masterId) {
-      try {
-        const masterDoc = await payload.findByID({
-          collection: 'masters',
-          id: masterId,
-        });
-        resolvedMasterId = masterDoc?.id ?? null;
-      } catch (err) {
-        console.warn('FulfillCheckout: master not found with metadata masterId:', masterId, err?.message || err);
-      }
+    // Resolve relationship IDs using Payload so we persist the exact ID type expected by DB schema.
+    const resolvedMasterId = await resolveCollectionDocId('masters', masterId);
+    if (masterId && !resolvedMasterId) {
+      console.warn('FulfillCheckout: master not found with metadata masterId:', masterId);
     }
 
     // 3️⃣ Crear transacción de regalo
@@ -107,11 +133,20 @@ export async function fulfillCheckout(sessionId) {
         return;
       }
 
+      const resolvedGiftId = await resolveCollectionDocId('gifts', giftId);
+      if (!resolvedGiftId) {
+        console.warn('FulfillCheckout: gift not found with metadata giftId:', giftId);
+        return;
+      }
+
+      const giftRelationship = toRelationshipValue(resolvedGiftId);
+      const masterRelationship = toRelationshipValue(resolvedMasterId);
+
       savedOrder = await payload.create({
         collection: 'gift-orders',
         data: {
-          gift: giftId,
-          ...(resolvedMasterId ? { master: String(resolvedMasterId) } : {}),
+          gift: giftRelationship,
+          ...(masterRelationship ? { master: masterRelationship } : {}),
           customerEmail,
           recipientName,
           ...(deliveryAddress ? { deliveryAddress } : {}),
