@@ -11,9 +11,57 @@ function sanitizeMetadataText(value, maxLength) {
   return value.replace(/\s+/g, ' ').trim().slice(0, maxLength);
 }
 
+function normalizeBaseUrl(rawUrl) {
+  if (typeof rawUrl !== 'string') return null;
+
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
+
+  try {
+    return new URL(candidate).origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveAppBaseUrl(req) {
+  const fromEnv = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL);
+  if (fromEnv) return fromEnv;
+
+  const forwardedHost = req.headers.get('x-forwarded-host');
+  const forwardedProto = req.headers.get('x-forwarded-proto') || 'http';
+  if (forwardedHost) {
+    const fromForwarded = normalizeBaseUrl(`${forwardedProto}://${forwardedHost}`);
+    if (fromForwarded) return fromForwarded;
+  }
+
+  const host = req.headers.get('host');
+  if (host) {
+    const fromHost = normalizeBaseUrl(`http://${host}`);
+    if (fromHost) return fromHost;
+  }
+
+  try {
+    return new URL(req.url).origin;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
+    const appBaseUrl = resolveAppBaseUrl(req);
+
+    if (!appBaseUrl) {
+      console.error('CreateCheckoutSession: invalid app base URL. Check NEXT_PUBLIC_APP_URL and request headers.');
+      return NextResponse.json(
+        { error: 'Server misconfiguration: invalid app URL' },
+        { status: 500 }
+      );
+    }
 
     // 🔹 Datos que vienen del front
     const { name, price, days } = body;
@@ -62,8 +110,8 @@ export async function POST(req) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/stripe/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/stripe/cancel`,
+      success_url: `${appBaseUrl}/stripe/success`,
+      cancel_url: `${appBaseUrl}/stripe/cancel`,
       metadata: {
         checkoutType,
         giftId: body.giftId || '',

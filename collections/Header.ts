@@ -94,6 +94,13 @@ export const Header: CollectionConfig = {
       type: 'text',
     },
     {
+      name: 'logo',
+      label: 'Header logo',
+      type: 'upload',
+      relationTo: 'media',
+      required: false,
+    },
+    {
       name: 'links',
       label: 'Navigation links',
       type: 'array',

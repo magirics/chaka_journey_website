@@ -13,6 +13,10 @@ export default function middleware(request: NextRequest) {
     pathname.match(/^\/[a-z]{2}\/admin/)
   ) {
     return NextResponse.next()
+
+    // Keep Payload login unlocalized. Otherwise next-intl redirects
+    // /admin/login -> /{locale}/admin/login, which redirects back again.
+    return NextResponse.next();
   }
 
   // 🔥 2. Dejar pasar API también (muy importante)

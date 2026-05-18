@@ -4,6 +4,55 @@ import nodemailer from 'nodemailer';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+function normalizeRelationshipId(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return trimmed;
+  }
+  if (typeof value === 'object' && value?.value !== undefined) {
+    return normalizeRelationshipId(value.value);
+  }
+  return value;
+}
+
+async function resolveCollectionDocId(collection, rawId) {
+  const normalized = normalizeRelationshipId(rawId);
+  if (!normalized) return null;
+
+  const candidates = [normalized];
+  if (typeof normalized === 'string' && /^\d+$/.test(normalized)) {
+    candidates.push(Number(normalized));
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const doc = await payload.findByID({
+        collection,
+        id: candidate,
+      });
+      if (doc?.id !== undefined && doc?.id !== null) {
+        return doc.id;
+      }
+    } catch {
+      
+    }
+  }
+
+  return null;
+}
+
+function toRelationshipValue(id) {
+  if (typeof id === 'string' && /^\d+$/.test(id)) {
+    return Number(id);
+  }
+
+  return id;
+}
+
+
 export async function fulfillCheckout(sessionId) {
   console.log('🔔 Fulfillment iniciado para sessionId:', sessionId);
 
@@ -65,6 +114,12 @@ export async function fulfillCheckout(sessionId) {
       deliveryFee,
     });
 
+    // Resolve relationship IDs using Payload so we persist the exact ID type expected by DB schema.
+    const resolvedMasterId = await resolveCollectionDocId('masters', masterId);
+    if (masterId && !resolvedMasterId) {
+      console.warn('FulfillCheckout: master not found with metadata masterId:', masterId);
+    }
+
     // 3️⃣ Crear transacción de regalo
     let savedOrder;
     if (checkoutType === 'gift') {
@@ -78,11 +133,20 @@ export async function fulfillCheckout(sessionId) {
         return;
       }
 
+      const resolvedGiftId = await resolveCollectionDocId('gifts', giftId);
+      if (!resolvedGiftId) {
+        console.warn('FulfillCheckout: gift not found with metadata giftId:', giftId);
+        return;
+      }
+
+      const giftRelationship = toRelationshipValue(resolvedGiftId);
+      const masterRelationship = toRelationshipValue(resolvedMasterId);
+
       savedOrder = await payload.create({
         collection: 'gift-orders',
         data: {
-          gift: giftId,
-          ...(masterId ? { master: masterId } : {}),
+          gift: giftRelationship,
+          ...(masterRelationship ? { master: masterRelationship } : {}),
           customerEmail,
           recipientName,
           ...(deliveryAddress ? { deliveryAddress } : {}),
@@ -106,12 +170,31 @@ export async function fulfillCheckout(sessionId) {
         return;
       }
 
+      // Idempotencia: evita crear una segunda reserva para la misma sesión de Stripe.
+      const existingReserve = await payload.find({
+        collection: 'reserves',
+        where: {
+          stripeSessionId: {
+            equals: sessionId,
+          },
+        },
+        limit: 1,
+      });
+
+      if (existingReserve.totalDocs > 0) {
+        console.log('FulfillCheckout: reserva ya existente para esta sesión, omitiendo creación.', {
+          sessionId,
+          reserveId: existingReserve.docs[0]?.id,
+        });
+        return;
+      }
+
       // 4️⃣ Crear la reserva en Payload
       console.log('FulfillCheckout: creando reserva en Payload con:', {
         stripeSessionId: sessionId,
         customerEmail,
         amount,
-        masterId,
+        masterId: resolvedMasterId,
         startDate,
         endDate,
       });
@@ -122,7 +205,7 @@ export async function fulfillCheckout(sessionId) {
           stripeSessionId: sessionId,
           customerEmail,
           status: 'paid',
-          ...(masterId ? { master: masterId } : {}),
+          ...(resolvedMasterId ? { masterRef: String(resolvedMasterId) } : {}),
           ...(startDate ? { startDate } : {}),
           ...(endDate ? { endDate } : {}),
         },

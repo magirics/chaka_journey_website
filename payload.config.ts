@@ -28,8 +28,61 @@ dotenv.config()
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-// 🔥 USA SOLO ESTO (nada dinámico)
-const serverURL = process.env.PAYLOAD_PUBLIC_SERVER_URL as string
+
+const normalizeUrl = (value?: string) => {
+  if (!value) return undefined
+  return value.replace(/\/+$/, '')
+}
+
+const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL)
+const payloadPublicUrl = normalizeUrl(process.env.PAYLOAD_PUBLIC_SERVER_URL)
+const isProduction = process.env.NODE_ENV === 'production'
+
+const codespaceName = process.env.CODESPACE_NAME
+const codespacesDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
+const codespacesBaseOrigin =
+  codespaceName && codespacesDomain
+    ? `https://${codespaceName}-3000.${codespacesDomain}`
+    : undefined
+
+const devServerURL =
+  normalizeUrl(process.env.PAYLOAD_DEV_SERVER_URL) ||
+  `http://localhost:${process.env.PORT || '3000'}`
+
+const serverURL = isProduction
+  ? appUrl || payloadPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
+  : devServerURL
+const serverHost = (() => {
+  try {
+    return new URL(serverURL).hostname
+  } catch {
+    return ''
+  }
+})()
+
+const devOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'https://localhost:3000',
+  'https://localhost:3001',
+  'https://127.0.0.1:3000',
+  'https://127.0.0.1:3001',
+]
+
+const codespacesOrigins = [
+  codespacesBaseOrigin,
+  codespacesBaseOrigin?.replace('-3000.', '-3001.'),
+  appUrl?.includes('.app.github.dev') ? appUrl : undefined,
+  payloadPublicUrl?.includes('.app.github.dev') ? payloadPublicUrl : undefined,
+]
+
+const allowedOrigins = Array.from(
+  new Set([...devOrigins, ...codespacesOrigins, appUrl, payloadPublicUrl].filter(Boolean) as string[]),
+)
+
+const isCodespacesHost = serverHost.endsWith('.app.github.dev')
 
 export default buildConfig({
   sharp,

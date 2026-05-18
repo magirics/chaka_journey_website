@@ -1,9 +1,16 @@
 import Link from "next/link";
 
-export default function Logo() {
+type LogoProps = {
+  src?: string;
+  alt?: string;
+};
+
+export default function Logo({ src, alt = "Chaka" }: LogoProps) {
+  const logoSrc = src || "/logo.png";
+
   return (
     <Link href="/home">
-      <img src="/logo.png" className="h-12 invert" />
+      <img src={logoSrc} alt={alt} className="h-12" />
     </Link>
   );
 }
