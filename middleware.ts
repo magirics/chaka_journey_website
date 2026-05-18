@@ -1,46 +1,37 @@
-import createMiddleware from 'next-intl/middleware';
-import { NextRequest, NextResponse } from 'next/server';
-import { routing } from './i18n/routing';
+import createMiddleware from 'next-intl/middleware'
+import { NextRequest, NextResponse } from 'next/server'
+import { routing } from './i18n/routing'
 
-const intlMiddleware = createMiddleware(routing);
+const intlMiddleware = createMiddleware(routing)
 
 export default function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname } = request.nextUrl
 
-  if (pathname === '/admin/login' || pathname.startsWith('/admin/login/')) {
-    const hasAuthCookie =
-      Boolean(request.cookies.get('chaka-token')?.value) ||
-      Boolean(request.cookies.get('payload-token')?.value);
-
-    if (hasAuthCookie) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/admin';
-      return NextResponse.redirect(url);
-    }
+  // 🔥 1. Dejar que Payload maneje TODO lo de admin (con o sin locale)
+  if (
+    pathname.startsWith('/admin') ||
+    pathname.match(/^\/[a-z]{2}\/admin/)
+  ) {
+    return NextResponse.next()
   }
 
-  // Backward compatibility for outdated plural routes.
-  if (pathname.startsWith('/admin/collections/footers')) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.replace('/admin/collections/footers', '/admin/collections/footer');
-    return NextResponse.redirect(url);
+  // 🔥 2. Dejar pasar API también (muy importante)
+  if (
+    pathname.startsWith('/api') ||
+    pathname.match(/^\/[a-z]{2}\/api/)
+  ) {
+    return NextResponse.next()
   }
 
-  if (pathname.startsWith('/api/footers')) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.replace('/api/footers', '/api/footer');
-    return NextResponse.redirect(url);
+  // 🔥 3. Archivos internos de Next
+  if (pathname.startsWith('/_next')) {
+    return NextResponse.next()
   }
 
-  return intlMiddleware(request);
+  // 🔥 4. Todo lo demás → next-intl
+  return intlMiddleware(request)
 }
 
 export const config = {
-  matcher: [
-    '/admin/login',
-    '/admin/login/:path*',
-    '/admin/collections/footers/:path*',
-    '/api/footers/:path*',
-    '/((?!api|stripe|typeform|admin|trpc|_next|_vercel|.*\\..*).*)',
-  ],
+  matcher: ['/((?!_next|favicon.ico).*)'],
 }
