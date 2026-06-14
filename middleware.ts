@@ -7,35 +7,25 @@ const intlMiddleware = createMiddleware(routing)
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 🔥 1. Dejar que Payload maneje TODO lo de admin (con o sin locale)
+  // Public files must bypass next-intl or they get rewritten under /{locale}.
+  if (/\.[^/]+$/.test(pathname)) {
+    return NextResponse.next()
+  }
+
+  // Payload admin and API routes must remain unlocalized.
   if (
     pathname.startsWith('/admin') ||
-    pathname.match(/^\/[a-z]{2}\/admin/)
-  ) {
-    return NextResponse.next()
-
-    // Keep Payload login unlocalized. Otherwise next-intl redirects
-    // /admin/login -> /{locale}/admin/login, which redirects back again.
-    return NextResponse.next();
-  }
-
-  // 🔥 2. Dejar pasar API también (muy importante)
-  if (
+    pathname.match(/^\/[a-z]{2}\/admin/) ||
     pathname.startsWith('/api') ||
-    pathname.match(/^\/[a-z]{2}\/api/)
+    pathname.match(/^\/[a-z]{2}\/api/) ||
+    pathname.startsWith('/_next')
   ) {
     return NextResponse.next()
   }
 
-  // 🔥 3. Archivos internos de Next
-  if (pathname.startsWith('/_next')) {
-    return NextResponse.next()
-  }
-
-  // 🔥 4. Todo lo demás → next-intl
   return intlMiddleware(request)
 }
 
 export const config = {
-  matcher: ['/((?!_next|favicon.ico).*)'],
+  matcher: ['/((?!_next|favicon.ico|.*\\..*).*)'],
 }

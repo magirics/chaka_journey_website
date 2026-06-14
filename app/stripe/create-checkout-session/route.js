@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getPayload } from "payload";
+import config from "../../../payload.config";
 
 // Inicializa Stripe con tu secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -50,6 +52,99 @@ function resolveAppBaseUrl(req) {
   }
 }
 
+function startOfUtcDay(input) {
+  const date = new Date(input);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+}
+
+function endOfUtcDay(input) {
+  const date = new Date(input);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+}
+
+function isValidDate(value) {
+  return typeof value === "string" && value.trim() !== "" && !Number.isNaN(new Date(value).getTime());
+}
+
+async function validateReservationAvailability({ masterId, startDate, endDate }) {
+  if (!masterId || !isValidDate(startDate) || !isValidDate(endDate)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Selecciona fechas válidas antes de continuar con el pago.",
+    };
+  }
+
+  const start = startOfUtcDay(startDate);
+  const end = endOfUtcDay(endDate);
+
+  if (start > end) {
+    return {
+      ok: false,
+      status: 400,
+      error: "La fecha final no puede ser anterior a la fecha inicial.",
+    };
+  }
+
+  const payload = await getPayload({ config });
+  let master;
+
+  try {
+    master = await payload.findByID({
+      collection: "masters",
+      id: masterId,
+    });
+  } catch {
+    return {
+      ok: false,
+      status: 404,
+      error: "No pudimos encontrar al maestro seleccionado.",
+    };
+  }
+
+  const availability = Array.isArray(master?.availability) ? master.availability : [];
+  const isInsideAvailability = availability.some((period) => {
+    if (!isValidDate(period?.from) || !isValidDate(period?.to)) return false;
+    return start >= startOfUtcDay(period.from) && end <= endOfUtcDay(period.to);
+  });
+
+  if (!isInsideAvailability) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Las fechas seleccionadas están fuera de la disponibilidad del maestro.",
+    };
+  }
+
+  const overlapping = await payload.find({
+    collection: "reserves",
+    where: {
+      and: [
+        {
+          or: [
+            { masterRef: { equals: String(master.id) } },
+            { master: { equals: master.id } },
+          ],
+        },
+        { startDate: { less_than_equal: end.toISOString() } },
+        { endDate: { greater_than_equal: start.toISOString() } },
+        { status: { equals: "paid" } },
+      ],
+    },
+    limit: 1,
+  });
+
+  if (overlapping.totalDocs > 0) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Estas fechas ya están reservadas. Selecciona otro rango para continuar.",
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -77,6 +172,21 @@ export async function POST(req) {
       checkoutType === 'gift'
         ? `${name} - Regalo ${body.giftType === 'digital' ? 'Digital' : 'Fisico'}`
         : `${name} - ${days} dias`;
+
+    if (checkoutType === "reserve") {
+      const availability = await validateReservationAvailability({
+        masterId: body.masterId,
+        startDate: body.startDate,
+        endDate: body.endDate,
+      });
+
+      if (!availability.ok) {
+        return NextResponse.json(
+          { error: availability.error, code: "RESERVATION_UNAVAILABLE" },
+          { status: availability.status }
+        );
+      }
+    }
 
     // 🔹 Crea la sesión en Stripe
     console.log('CreateCheckoutSession: body payload', {
@@ -110,7 +220,7 @@ export async function POST(req) {
           quantity: 1,
         },
       ],
-      success_url: `${appBaseUrl}/stripe/success`,
+      success_url: `${appBaseUrl}/stripe/success?checkout_type=${checkoutType}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appBaseUrl}/stripe/cancel`,
       metadata: {
         checkoutType,

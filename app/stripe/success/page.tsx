@@ -9,8 +9,13 @@ export const metadata = {
   description: "Confirmación de pago exitoso",
 };
 
-export default function SuccessPage() {
+export default async function SuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout_type?: string }>;
+}) {
   const locale = "es";
+  const { checkout_type: checkoutType } = await searchParams;
   
   const messages = {
     Header: {},
@@ -22,7 +27,7 @@ export default function SuccessPage() {
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Navbar />
-        <SuccessContent />
+        <SuccessContent checkoutType={checkoutType} />
         <Footer />
       </div>
     </NextIntlClientProvider>

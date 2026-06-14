@@ -22,6 +22,7 @@ import { Sections } from './collections/Sections'
 import { TypeformSubmissions } from './collections/TypeformSubmissions'
 import { Gifts } from './collections/Gifts'
 import { GiftOrders } from './collections/GiftOrders'
+import { Subscribers } from './collections/Subscribers'
 
 dotenv.config()
 
@@ -113,6 +114,7 @@ export default buildConfig({
     Us,
     Sections,
     TypeformSubmissions,
+    Subscribers,
   ],
 
   admin: {

@@ -48,12 +48,28 @@ export default function Navbar() {
   const socialLinks = Array.isArray(header?.socialLinks) && header.socialLinks.length > 0
     ? header.socialLinks.map((link: any) => ({
         href: link?.href || "#",
-        icon: link?.icon || "instagram",
+        iconName: link?.icon || "instagram",
+        iconSrc:
+          link?.uploadedIcon &&
+          typeof link.uploadedIcon === "object" &&
+          typeof link.uploadedIcon.url === "string"
+            ? link.uploadedIcon.url
+            : `/icons/${link?.icon || "instagram"}.svg`,
         label: link?.label || "Social",
       }))
     : [
-        { href: "https://instagram.com", icon: "instagram", label: "Instagram" },
-        { href: "https://facebook.com", icon: "facebook", label: "Facebook" },
+        {
+          href: "https://instagram.com",
+          iconName: "instagram",
+          iconSrc: "/icons/instagram.svg",
+          label: "Instagram",
+        },
+        {
+          href: "https://facebook.com",
+          iconName: "facebook",
+          iconSrc: "/icons/facebook.svg",
+          label: "Facebook",
+        },
       ];
 
   return (
@@ -85,17 +101,24 @@ function NavLinks({ links }: { links: Array<{ href: string; text: string }> }) {
   );
 }
 
-function NavIcons({ links }: { links: Array<{ href: string; icon: string; label: string }> }) {
-  const hasFacebook = links.some((link) => link.icon === 'facebook');
+type SocialLink = {
+  href: string;
+  iconName: string;
+  iconSrc: string;
+  label: string;
+};
+
+function NavIcons({ links }: { links: SocialLink[] }) {
+  const hasFacebook = links.some((link) => link.iconName === "facebook");
 
   return (
     <>
       {links.map((link) => (
-        <Fragment key={`${link.href}-${link.icon}`}>
-          <li key={`${link.href}-${link.icon}`}>
-            <NavIcon href={link.href} icon={link.icon} label={link.label} />
+        <Fragment key={`${link.href}-${link.iconSrc}`}>
+          <li>
+            <NavIcon href={link.href} iconSrc={link.iconSrc} label={link.label} />
           </li>
-          {link.icon === "facebook" ? (
+          {link.iconName === "facebook" ? (
             <li key={`saved-counter-${link.href}`}>
               <FavoritesCounterIcon />
             </li>
@@ -187,14 +210,17 @@ export function NavLink({ href, text }: NavLinkProps) {
 
 type NavIconProps = {
   href: string;
-  icon: string;
+  iconSrc?: string;
+  icon?: string;
   label: string;
 };
 
-export function NavIcon({ href, icon, label }: NavIconProps) {
+export function NavIcon({ href, iconSrc, icon, label }: NavIconProps) {
+  const src = iconSrc || `/icons/${icon || "instagram"}.svg`;
+
   return (
     <Link href={href} aria-label={label}>
-      <img src={`/icons/${icon}.svg`} alt={label} className="hover:bg-con h-6" />
+      <img src={src} alt={label} className="hover:bg-con h-6 w-6 object-contain" />
     </Link>
   );
 }
@@ -205,7 +231,7 @@ export function MobileNavbar({
   logoSrc,
 }: {
   navLinks: Array<{ href: string; text: string }>;
-  socialLinks: Array<{ href: string; icon: string; label: string }>;
+  socialLinks: SocialLink[];
   logoSrc?: string;
 }) {
   const [visible, setVisible] = useState(false);
@@ -256,7 +282,7 @@ function NavBody({
   socialLinks,
 }: {
   navLinks: Array<{ href: string; text: string }>;
-  socialLinks: Array<{ href: string; icon: string; label: string }>;
+  socialLinks: SocialLink[];
 }) {
   return (
     <nav className="bg-base-100 flex h-full w-screen flex-col py-4">
@@ -277,7 +303,7 @@ export function DesktopNavbar({
   logoSrc,
 }: {
   navLinks: Array<{ href: string; text: string }>;
-  socialLinks: Array<{ href: string; icon: string; label: string }>;
+  socialLinks: SocialLink[];
   logoSrc?: string;
 }) {
   return (

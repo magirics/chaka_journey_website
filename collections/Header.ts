@@ -99,6 +99,21 @@ export const Header: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       required: false,
+      admin: {
+        description:
+          'Logo de la cabecera. Selecciona un archivo de Media distinto al favicon; editar un archivo existente lo cambia en todos sus usos.',
+      },
+    },
+    {
+      name: 'favicon',
+      label: 'Favicon',
+      type: 'upload',
+      relationTo: 'media',
+      required: false,
+      admin: {
+        description:
+          'Icono de la pestaña del navegador. Selecciona un archivo de Media distinto al logo.',
+      },
     },
     {
       name: 'links',
@@ -122,10 +137,22 @@ export const Header: CollectionConfig = {
       type: 'array',
       fields: [
         {
+          name: 'uploadedIcon',
+          label: 'Social media icon',
+          type: 'upload',
+          relationTo: 'media',
+          required: false,
+          admin: {
+            description: 'Carga el icono que se mostrará junto al enlace.',
+          },
+        },
+        {
           name: 'icon',
+          label: 'Default icon name',
           type: 'text',
           admin: {
-            description: 'Icon file name inside /public/icons without .svg',
+            description:
+              'Opcional. Nombre del icono en /public/icons, sin .svg, usado si no cargas una imagen.',
           },
         },
         {

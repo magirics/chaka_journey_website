@@ -59,7 +59,9 @@ const masterUiByLocale: Record<string, {
   selectStayDays: string;
   selectNumberOfGuests: string;
   pay: string;
+  checkingAvailability: string;
   selectStayDaysAlert: string;
+  checkoutError: string;
   guestLimitAlert: string;
   alertConfirm: string;
 }> = {
@@ -76,7 +78,9 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Selecciona los dias de tu estancia',
     selectNumberOfGuests: 'Selecciona el numero de invitados',
     pay: 'Pagar',
+    checkingAvailability: 'Verificando disponibilidad...',
     selectStayDaysAlert: 'Por favor selecciona los dias de tu estancia antes de pagar.',
+    checkoutError: 'No pudimos iniciar el pago. Intentalo nuevamente.',
     guestLimitAlert: 'La cantidad de invitados se ha restringido a {max} porque ese es el maximo permitido por este maestro.',
     alertConfirm: 'Aceptar',
   },
@@ -93,7 +97,9 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Select your stay days',
     selectNumberOfGuests: 'Select your number of guests',
     pay: 'Pay',
+    checkingAvailability: 'Checking availability...',
     selectStayDaysAlert: 'Please select your stay dates before paying.',
+    checkoutError: 'We could not start the payment. Please try again.',
     guestLimitAlert: 'The number of guests has been limited to {max} because that is the maximum allowed by this master.',
     alertConfirm: 'OK',
   },
@@ -110,7 +116,9 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Selectionnez les jours de votre sejour',
     selectNumberOfGuests: 'Selectionnez le nombre de convives',
     pay: 'Payer',
+    checkingAvailability: 'Verification de la disponibilite...',
     selectStayDaysAlert: 'Veuillez selectionner les dates de votre sejour avant de payer.',
+    checkoutError: 'Impossible de lancer le paiement. Veuillez reessayer.',
     guestLimitAlert: 'Le nombre d\'invites a ete limite a {max}, car c\'est le maximum autorise par ce maitre.',
     alertConfirm: 'OK',
   },
@@ -127,7 +135,9 @@ const masterUiByLocale: Record<string, {
     selectStayDays: 'Wahle die Tage deines Aufenthalts',
     selectNumberOfGuests: 'Wahle die Anzahl der Gaste',
     pay: 'Bezahlen',
+    checkingAvailability: 'Verfugbarkeit wird gepruft...',
     selectStayDaysAlert: 'Bitte wahle vor dem Bezahlen deine Aufenthaltstage aus.',
+    checkoutError: 'Die Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.',
     guestLimitAlert: 'Die Anzahl der Gaste wurde auf {max} begrenzt, da dies die maximale Anzahl fur diesen Meister ist.',
     alertConfirm: 'OK',
   },
@@ -338,7 +348,7 @@ export default function Master() {
 
     const selectedDays = getSelectedDayCount(startDate, endDate);
 
-    const masterId = masterIdFromParams || masterData?.id || 'unknown-master';
+    const masterId = masterData?.id || masterIdFromParams || 'unknown-master';
 
     const res = await fetch('/stripe/create-checkout-session', {
       method: 'POST',
@@ -354,7 +364,10 @@ export default function Master() {
     });
     const data = await res.json();
     if (data?.url) window.location.href = data.url;
-    else console.error('Error en checkout', data);
+    else {
+      console.error('Error en checkout', data);
+      throw new Error(data?.error || ui.checkoutError);
+    }
   }
 
   const overview =
@@ -406,7 +419,9 @@ export default function Master() {
               selectStayDaysLabel={ui.selectStayDays}
               selectNumberOfGuestsLabel={ui.selectNumberOfGuests}
               payLabel={ui.pay}
+              checkingAvailabilityLabel={ui.checkingAvailability}
               selectStayDaysAlert={ui.selectStayDaysAlert}
+              checkoutError={ui.checkoutError}
               guestLimitAlert={ui.guestLimitAlert}
               alertConfirmLabel={ui.alertConfirm}
               maxGuests={content.maxGuests}
@@ -471,17 +486,21 @@ function ReserveDialog({
   selectStayDaysLabel,
   selectNumberOfGuestsLabel,
   payLabel,
+  checkingAvailabilityLabel,
   selectStayDaysAlert,
+  checkoutError,
   guestLimitAlert,
   alertConfirmLabel,
   maxGuests
 }: {
-  onPay: (range: string, guests: number) => void;
+  onPay: (range: string, guests: number) => Promise<void>;
   availability?: Array<{ from: string; to: string }>;
   selectStayDaysLabel: string;
   selectNumberOfGuestsLabel: string;
   payLabel: string;
+  checkingAvailabilityLabel: string;
   selectStayDaysAlert: string;
+  checkoutError: string;
   guestLimitAlert: string;
   alertConfirmLabel: string;
   maxGuests: number;
@@ -496,6 +515,8 @@ function ReserveDialog({
   const [guests, setGuests] = useState(0);
   const [showMissingDatesPopup, setShowMissingDatesPopup] = useState(false);
   const [showGuestLimitPopup, setShowGuestLimitPopup] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   const guestLimitAlertMessage = guestLimitAlert.replace('{max}', String(normalizedMaxGuests));
 
@@ -535,6 +556,12 @@ function ReserveDialog({
         </div>
       )}
 
+      {paymentError && (
+        <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          {paymentError}
+        </div>
+      )}
+
       <h3 className="font-bold text-lg">{selectStayDaysLabel}</h3>
       <div className="flex justify-center">
         <Calendar
@@ -568,14 +595,24 @@ function ReserveDialog({
         />
       </div>
 
-      <button className="btn btn-primary w-30 self-end" onClick={() => {
+      <button className="btn btn-primary min-w-30 self-end" disabled={isCheckingAvailability} onClick={async () => {
         if (range === "") {
           setShowMissingDatesPopup(true);
           return;
         }
 
-        onPay(range, clampGuests(guests));
-      }}>{payLabel}</button>
+        setPaymentError("");
+        setIsCheckingAvailability(true);
+
+        try {
+          await onPay(range, clampGuests(guests));
+        } catch (error) {
+          setPaymentError(error instanceof Error && error.message ? error.message : checkoutError);
+          setIsCheckingAvailability(false);
+        }
+      }}>
+        {isCheckingAvailability ? checkingAvailabilityLabel : payLabel}
+      </button>
     </div>
 
     <form method="dialog" className="modal-backdrop">

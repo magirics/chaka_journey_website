@@ -44,7 +44,7 @@ async function get_messages(locale: string) {
     return page as Record<string, unknown>;
 }
 
-async function fetchCollectionFirstDoc(query: string) {
+export async function fetchCollectionFirstDoc(query: string) {
     const apiBaseUrls = await resolveApiBaseUrls();
 
     try {
@@ -63,7 +63,7 @@ async function fetchDocFromBaseUrl(baseUrl: string, query: string) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
             const res = await fetch(endpoint, {
-                next: { revalidate: 120 },
+                cache: 'no-store',
                 signal: AbortSignal.timeout(4500),
             });
 

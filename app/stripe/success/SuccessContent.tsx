@@ -4,8 +4,9 @@ import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
-export default function SuccessContent() {
+export default function SuccessContent({ checkoutType }: { checkoutType?: string }) {
   const router = useRouter();
+  const isGift = checkoutType === "gift";
 
   return (
     <main className="flex-grow flex flex-col items-center justify-center text-center px-4">
@@ -33,7 +34,9 @@ export default function SuccessContent() {
         transition={{ delay: 0.4 }}
         className="text-gray-600 mt-2"
       >
-        Gracias por tu reserva. Hemos enviado un correo de confirmación.
+        {isGift
+          ? "Tu pago fue recibido. Te enviaremos un correo cuando el regalo haya sido confirmado."
+          : "Tu pago fue recibido y estamos terminando de procesar la reserva. Cuando recibas el correo de confirmación, significa que el pago se completó correctamente y que tu reserva fue creada."}
       </motion.p>
 
       <motion.button
