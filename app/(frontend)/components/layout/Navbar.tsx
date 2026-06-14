@@ -27,6 +27,10 @@ export default function Navbar() {
   const locale = useLocale();
   const messages = useMessages() as Record<string, any>;
   const header = (messages?.Header as Record<string, any>) || {};
+  const logoSrc =
+    header?.logo && typeof header.logo === "object" && typeof header.logo.url === "string"
+      ? header.logo.url
+      : undefined;
   const announcement = announcementByLocale[locale] || announcementByLocale.en;
 
   const navLinks = Array.isArray(header?.links) && header.links.length > 0
@@ -44,18 +48,34 @@ export default function Navbar() {
   const socialLinks = Array.isArray(header?.socialLinks) && header.socialLinks.length > 0
     ? header.socialLinks.map((link: any) => ({
         href: link?.href || "#",
-        icon: link?.icon || "instagram",
+        iconName: link?.icon || "instagram",
+        iconSrc:
+          link?.uploadedIcon &&
+          typeof link.uploadedIcon === "object" &&
+          typeof link.uploadedIcon.url === "string"
+            ? link.uploadedIcon.url
+            : `/icons/${link?.icon || "instagram"}.svg`,
         label: link?.label || "Social",
       }))
     : [
-        { href: "https://instagram.com", icon: "instagram", label: "Instagram" },
-        { href: "https://facebook.com", icon: "facebook", label: "Facebook" },
+        {
+          href: "https://instagram.com",
+          iconName: "instagram",
+          iconSrc: "/icons/instagram.svg",
+          label: "Instagram",
+        },
+        {
+          href: "https://facebook.com",
+          iconName: "facebook",
+          iconSrc: "/icons/facebook.svg",
+          label: "Facebook",
+        },
       ];
 
   return (
     <>
-      <MobileNavbar navLinks={navLinks} socialLinks={socialLinks} />
-      <DesktopNavbar navLinks={navLinks} socialLinks={socialLinks} />
+      <MobileNavbar navLinks={navLinks} socialLinks={socialLinks} logoSrc={logoSrc} />
+      <DesktopNavbar navLinks={navLinks} socialLinks={socialLinks} logoSrc={logoSrc} />
       <AnnouncementBar message={announcement} />
     </>
   );
@@ -81,17 +101,24 @@ function NavLinks({ links }: { links: Array<{ href: string; text: string }> }) {
   );
 }
 
-function NavIcons({ links }: { links: Array<{ href: string; icon: string; label: string }> }) {
-  const hasFacebook = links.some((link) => link.icon === 'facebook');
+type SocialLink = {
+  href: string;
+  iconName: string;
+  iconSrc: string;
+  label: string;
+};
+
+function NavIcons({ links }: { links: SocialLink[] }) {
+  const hasFacebook = links.some((link) => link.iconName === "facebook");
 
   return (
     <>
       {links.map((link) => (
-        <Fragment key={`${link.href}-${link.icon}`}>
-          <li key={`${link.href}-${link.icon}`}>
-            <NavIcon href={link.href} icon={link.icon} label={link.label} />
+        <Fragment key={`${link.href}-${link.iconSrc}`}>
+          <li>
+            <NavIcon href={link.href} iconSrc={link.iconSrc} label={link.label} />
           </li>
-          {link.icon === "facebook" ? (
+          {link.iconName === "facebook" ? (
             <li key={`saved-counter-${link.href}`}>
               <FavoritesCounterIcon />
             </li>
@@ -146,18 +173,6 @@ function FavoritesCounterIcon() {
 
   const isEnabled = count > 0;
 
-  useEffect(() => {
-    if (!isEnabled) return;
-
-    const intervalId = window.setInterval(() => {
-      triggerPop();
-    }, 7000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [isEnabled]);
-
   if (!isEnabled) return null;
 
   return (
@@ -195,14 +210,17 @@ export function NavLink({ href, text }: NavLinkProps) {
 
 type NavIconProps = {
   href: string;
-  icon: string;
+  iconSrc?: string;
+  icon?: string;
   label: string;
 };
 
-export function NavIcon({ href, icon, label }: NavIconProps) {
+export function NavIcon({ href, iconSrc, icon, label }: NavIconProps) {
+  const src = iconSrc || `/icons/${icon || "instagram"}.svg`;
+
   return (
     <Link href={href} aria-label={label}>
-      <img src={`/icons/${icon}.svg`} alt={label} className="hover:bg-con h-6" />
+      <img src={src} alt={label} className="hover:bg-con h-6 w-6 object-contain" />
     </Link>
   );
 }
@@ -210,9 +228,11 @@ export function NavIcon({ href, icon, label }: NavIconProps) {
 export function MobileNavbar({
   navLinks,
   socialLinks,
+  logoSrc,
 }: {
   navLinks: Array<{ href: string; text: string }>;
-  socialLinks: Array<{ href: string; icon: string; label: string }>;
+  socialLinks: SocialLink[];
+  logoSrc?: string;
 }) {
   const [visible, setVisible] = useState(false);
   const right = visible ? "0%" : "100%";
@@ -220,7 +240,7 @@ export function MobileNavbar({
 
   return (
     <div className={`sticky top-0 left-0 z-10 h-12 md:hidden ${vawaaSans.className}`}>
-      <NavHead handleMinimize={handleMinimize} />
+      <NavHead handleMinimize={handleMinimize} logoSrc={logoSrc} />
       <div
         className="fixed transition-transform duration-100"
         style={{
@@ -237,11 +257,17 @@ export function MobileNavbar({
   );
 }
 
-function NavHead({ handleMinimize }: { handleMinimize: MouseEventHandler }) {
+function NavHead({
+  handleMinimize,
+  logoSrc,
+}: {
+  handleMinimize: MouseEventHandler;
+  logoSrc?: string;
+}) {
   return (
     <nav className="bg-base-100 flex h-12 w-screen flex-row px-4">
       <div className="mr-4 flex flex-row items-center">
-        <Logo />
+        <Logo src={logoSrc} />
       </div>
       <div className="grow" />
       <button onClick={handleMinimize}>
@@ -256,7 +282,7 @@ function NavBody({
   socialLinks,
 }: {
   navLinks: Array<{ href: string; text: string }>;
-  socialLinks: Array<{ href: string; icon: string; label: string }>;
+  socialLinks: SocialLink[];
 }) {
   return (
     <nav className="bg-base-100 flex h-full w-screen flex-col py-4">
@@ -274,14 +300,16 @@ function NavBody({
 export function DesktopNavbar({
   navLinks,
   socialLinks,
+  logoSrc,
 }: {
   navLinks: Array<{ href: string; text: string }>;
-  socialLinks: Array<{ href: string; icon: string; label: string }>;
+  socialLinks: SocialLink[];
+  logoSrc?: string;
 }) {
   return (
     <nav className={`bg-base-100 sticky top-0 left-0 z-10 hidden h-12 w-screen flex-row items-center px-4 md:flex ${vawaaSans.className}`}>
       <div className="mr-4 flex flex-row items-center">
-        <Logo />
+        <Logo src={logoSrc} />
       </div>
       <ul className="flex flex-row items-center gap-8">
         <NavLinks links={navLinks} />

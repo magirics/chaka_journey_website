@@ -3,8 +3,8 @@
 import Lazy from "@/Lazy";
 import Calendar from "@/ui/Calendar";
 import Pricing from "@/ui/Pricing";
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useSearchParams } from 'next/navigation';
 import { useLocale } from "next-intl";
 
 type PayloadMaster = {
@@ -19,6 +19,8 @@ type PayloadMaster = {
   country?: string;
   days?: number;
   price?: number;
+  guest_price?: number;
+  max_guests?: number;
   bio?: string;
   image?: {
     url?: string;
@@ -55,7 +57,13 @@ const masterUiByLocale: Record<string, {
   availability: string;
   availabilityHint: string;
   selectStayDays: string;
+  selectNumberOfGuests: string;
   pay: string;
+  checkingAvailability: string;
+  selectStayDaysAlert: string;
+  checkoutError: string;
+  guestLimitAlert: string;
+  alertConfirm: string;
 }> = {
   es: {
     withLabel: 'con',
@@ -68,7 +76,13 @@ const masterUiByLocale: Record<string, {
     availability: 'Disponibilidad',
     availabilityHint: 'Consulta los dias resaltados en el calendario.',
     selectStayDays: 'Selecciona los dias de tu estancia',
+    selectNumberOfGuests: 'Selecciona el numero de invitados',
     pay: 'Pagar',
+    checkingAvailability: 'Verificando disponibilidad...',
+    selectStayDaysAlert: 'Por favor selecciona los dias de tu estancia antes de pagar.',
+    checkoutError: 'No pudimos iniciar el pago. Intentalo nuevamente.',
+    guestLimitAlert: 'La cantidad de invitados se ha restringido a {max} porque ese es el maximo permitido por este maestro.',
+    alertConfirm: 'Aceptar',
   },
   en: {
     withLabel: 'with',
@@ -81,7 +95,13 @@ const masterUiByLocale: Record<string, {
     availability: 'Availability',
     availabilityHint: 'Check highlighted days in the calendar.',
     selectStayDays: 'Select your stay days',
+    selectNumberOfGuests: 'Select your number of guests',
     pay: 'Pay',
+    checkingAvailability: 'Checking availability...',
+    selectStayDaysAlert: 'Please select your stay dates before paying.',
+    checkoutError: 'We could not start the payment. Please try again.',
+    guestLimitAlert: 'The number of guests has been limited to {max} because that is the maximum allowed by this master.',
+    alertConfirm: 'OK',
   },
   fr: {
     withLabel: 'avec',
@@ -94,7 +114,13 @@ const masterUiByLocale: Record<string, {
     availability: 'Disponibilite',
     availabilityHint: 'Consultez les jours mis en evidence dans le calendrier.',
     selectStayDays: 'Selectionnez les jours de votre sejour',
+    selectNumberOfGuests: 'Selectionnez le nombre de convives',
     pay: 'Payer',
+    checkingAvailability: 'Verification de la disponibilite...',
+    selectStayDaysAlert: 'Veuillez selectionner les dates de votre sejour avant de payer.',
+    checkoutError: 'Impossible de lancer le paiement. Veuillez reessayer.',
+    guestLimitAlert: 'Le nombre d\'invites a ete limite a {max}, car c\'est le maximum autorise par ce maitre.',
+    alertConfirm: 'OK',
   },
   de: {
     withLabel: 'mit',
@@ -107,7 +133,13 @@ const masterUiByLocale: Record<string, {
     availability: 'Verfugbarkeit',
     availabilityHint: 'Prufe die markierten Tage im Kalender.',
     selectStayDays: 'Wahle die Tage deines Aufenthalts',
+    selectNumberOfGuests: 'Wahle die Anzahl der Gaste',
     pay: 'Bezahlen',
+    checkingAvailability: 'Verfugbarkeit wird gepruft...',
+    selectStayDaysAlert: 'Bitte wahle vor dem Bezahlen deine Aufenthaltstage aus.',
+    checkoutError: 'Die Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.',
+    guestLimitAlert: 'Die Anzahl der Gaste wurde auf {max} begrenzt, da dies die maximale Anzahl fur diesen Meister ist.',
+    alertConfirm: 'OK',
   },
 };
 
@@ -116,13 +148,20 @@ export default function Master() {
   const [masterData, setMasterData] = useState<PayloadMaster | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const ui = masterUiByLocale[locale] || masterUiByLocale.en;
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const hasAutoOpenedReserve = useRef(false);
 
   const params = useParams();
   const masterIdFromParams = Array.isArray(params?.master)
     ? params.master[0]
     : params?.master;
+
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    import("cally").then(() => setReady(true));
+  }, []);
 
   useEffect(() => {
     if (!masterIdFromParams) return;
@@ -190,6 +229,8 @@ export default function Master() {
     const country = masterData?.country || "";
     const days = typeof masterData?.days === "number" ? masterData.days : 3;
     const price = typeof masterData?.price === "number" ? masterData.price : 1200;
+    const guestPrice = typeof masterData?.guest_price === "number" ? masterData.guest_price : 1200;
+    const maxGuests = typeof masterData?.max_guests === "number" ? masterData.max_guests : 2;
     const image =
       typeof masterData?.image === "object" && masterData?.image?.url
         ? masterData.image.url
@@ -205,18 +246,18 @@ export default function Master() {
     const availability = Array.isArray(masterData?.availability) ? masterData.availability : [];
     const galleryImages = Array.isArray(masterData?.gallery)
       ? masterData.gallery
-          .map((item) => {
-            if (!item || typeof item !== 'object') return '';
+        .map((item) => {
+          if (!item || typeof item !== 'object') return '';
 
-            const media = item.image;
-            if (media && typeof media === 'object' && typeof media.url === 'string') {
-              return media.url;
-            }
+          const media = item.image;
+          if (media && typeof media === 'object' && typeof media.url === 'string') {
+            return media.url;
+          }
 
-            return '';
-          })
-          .filter((url): url is string => Boolean(url))
-          .slice(0, 9)
+          return '';
+        })
+        .filter((url): url is string => Boolean(url))
+        .slice(0, 9)
       : [];
 
     return {
@@ -227,6 +268,8 @@ export default function Master() {
       country,
       days,
       price,
+      guestPrice,
+      maxGuests,
       image,
       bio,
       experienceIncludes,
@@ -239,8 +282,21 @@ export default function Master() {
 
   const handleReserve = () => {
     const dlg = document.getElementById('id_reserve_button') as HTMLDialogElement | null;
-    dlg?.showModal();
+    if (dlg && !dlg.open) {
+      dlg.showModal();
+    }
   }
+
+  useEffect(() => {
+    if (searchParams.get('reserve') !== '1') return;
+    if (hasAutoOpenedReserve.current) return;
+
+    const dlg = document.getElementById('id_reserve_button') as HTMLDialogElement | null;
+    if (!dlg || dlg.open) return;
+
+    dlg.showModal();
+    hasAutoOpenedReserve.current = true;
+  }, [searchParams]);
 
   const handleSave = () => {
     const currentMasterId = String(masterIdFromParams || masterData?.id || '');
@@ -262,7 +318,22 @@ export default function Master() {
     }
   }
 
-  const handlePay = async (range: string) => {
+  const getSelectedDayCount = (startDate: string | null, endDate: string | null) => {
+    if (!startDate || !endDate) return 0;
+
+    const parseDateOnly = (value: string) => {
+      const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+      return Date.UTC(year, month - 1, day);
+    };
+
+    const start = parseDateOnly(startDate);
+    const end = parseDateOnly(endDate);
+    const diffInDays = Math.round((end - start) / 86400000);
+
+    return Math.abs(diffInDays) + 1;
+  };
+
+  const handlePay = async (range: string, guests: number) => {
     console.log('Selected range', range)
     let startDate = null; let endDate = null;
     if (typeof range === 'string') {
@@ -275,15 +346,17 @@ export default function Master() {
       }
     }
 
-    const masterId = masterIdFromParams || masterData?.id || 'unknown-master';
+    const selectedDays = getSelectedDayCount(startDate, endDate);
+
+    const masterId = masterData?.id || masterIdFromParams || 'unknown-master';
 
     const res = await fetch('/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name,
-        price: content.price,
-        days: content.days,
+        name: content.title,
+        price: content.price + guests * content.guestPrice,
+        days: selectedDays || content.days,
         masterId,
         startDate,
         endDate,
@@ -291,7 +364,10 @@ export default function Master() {
     });
     const data = await res.json();
     if (data?.url) window.location.href = data.url;
-    else console.error('Error en checkout', data);
+    else {
+      console.error('Error en checkout', data);
+      throw new Error(data?.error || ui.checkoutError);
+    }
   }
 
   const overview =
@@ -331,8 +407,8 @@ export default function Master() {
             <div className="divider md:hidden" />
             <Pricing
               price={content.price}
-              guestPrice={230}
-              maxGuests={4}
+              guestPrice={content.guestPrice}
+              maxGuests={content.maxGuests}
               onReserve={handleReserve}
               onSave={handleSave}
               isSaved={isSaved}
@@ -341,7 +417,14 @@ export default function Master() {
               onPay={handlePay}
               availability={content.availability}
               selectStayDaysLabel={ui.selectStayDays}
+              selectNumberOfGuestsLabel={ui.selectNumberOfGuests}
               payLabel={ui.pay}
+              checkingAvailabilityLabel={ui.checkingAvailability}
+              selectStayDaysAlert={ui.selectStayDaysAlert}
+              checkoutError={ui.checkoutError}
+              guestLimitAlert={ui.guestLimitAlert}
+              alertConfirmLabel={ui.alertConfirm}
+              maxGuests={content.maxGuests}
             />
           </div>
         </div>
@@ -372,9 +455,7 @@ export default function Master() {
           </div>
         )}
         <div className="mb-8 flex justify-center">
-          <Lazy>
-            <Calendar value={value} setValue={setValue} availability={content.availability} />
-          </Lazy>
+          {ready && <Calendar value={value} setValue={setValue} availability={content.availability} />}
         </div>
       </main>
     </>
@@ -403,22 +484,135 @@ function ReserveDialog({
   onPay,
   availability,
   selectStayDaysLabel,
+  selectNumberOfGuestsLabel,
   payLabel,
+  checkingAvailabilityLabel,
+  selectStayDaysAlert,
+  checkoutError,
+  guestLimitAlert,
+  alertConfirmLabel,
+  maxGuests
 }: {
-  onPay: (range: string) => void;
+  onPay: (range: string, guests: number) => Promise<void>;
   availability?: Array<{ from: string; to: string }>;
   selectStayDaysLabel: string;
+  selectNumberOfGuestsLabel: string;
   payLabel: string;
+  checkingAvailabilityLabel: string;
+  selectStayDaysAlert: string;
+  checkoutError: string;
+  guestLimitAlert: string;
+  alertConfirmLabel: string;
+  maxGuests: number;
 }) {
-  const [value, setValue] = useState("")
+  const normalizedMaxGuests = Math.max(0, maxGuests);
+  const clampGuests = (value: number) => {
+    if (!Number.isFinite(value)) return 0;
+    return Math.min(normalizedMaxGuests, Math.max(0, value));
+  };
+
+  const [range, setRange] = useState("");
+  const [guests, setGuests] = useState(0);
+  const [showMissingDatesPopup, setShowMissingDatesPopup] = useState(false);
+  const [showGuestLimitPopup, setShowGuestLimitPopup] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+
+  const guestLimitAlertMessage = guestLimitAlert.replace('{max}', String(normalizedMaxGuests));
 
   return <dialog id="id_reserve_button" className="modal">
-    <div className="modal-box rounded-none min-w-160 flex flex-col">
+    <div className="modal-box rounded-none min-w-160 relative flex flex-col">
+      {showMissingDatesPopup && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 px-6">
+          <div className="w-full max-w-md rounded-lg border border-[#cc9966] bg-[#1e130d] p-5 text-white shadow-lg">
+            <p className="text-sm leading-6">{selectStayDaysAlert}</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowMissingDatesPopup(false)}
+              >
+                {alertConfirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGuestLimitPopup && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 px-6">
+          <div className="w-full max-w-md rounded-lg border border-[#cc9966] bg-[#1e130d] p-5 text-white shadow-lg">
+            <p className="text-sm leading-6">{guestLimitAlertMessage}</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowGuestLimitPopup(false)}
+              >
+                {alertConfirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {paymentError && (
+        <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          {paymentError}
+        </div>
+      )}
+
       <h3 className="font-bold text-lg">{selectStayDaysLabel}</h3>
       <div className="flex justify-center">
-        <Calendar value={value} setValue={setValue} availability={availability} />
+        <Calendar
+          value={range}
+          setValue={(nextValue) => {
+            setRange(nextValue);
+            if (nextValue !== "" && showMissingDatesPopup) {
+              setShowMissingDatesPopup(false);
+            }
+          }}
+          availability={availability}
+        />
       </div>
-      <button className="btn btn-primary w-30 self-end" onClick={() => onPay(value)}>{payLabel}</button>
+
+      <h3 className="font-bold text-lg">{selectNumberOfGuestsLabel}</h3>
+      <div className="m-6">
+        <input
+          name='max_guests'
+          type="number"
+          className="input"
+          value={guests}
+          min={0}
+          max={normalizedMaxGuests}
+          onChange={(event) => {
+            const nextGuests = Number(event.target.value);
+            if (Number.isFinite(nextGuests) && nextGuests > normalizedMaxGuests) {
+              setShowGuestLimitPopup(true);
+            }
+            setGuests(clampGuests(nextGuests));
+          }}
+        />
+      </div>
+
+      <button className="btn btn-primary min-w-30 self-end" disabled={isCheckingAvailability} onClick={async () => {
+        if (range === "") {
+          setShowMissingDatesPopup(true);
+          return;
+        }
+
+        setPaymentError("");
+        setIsCheckingAvailability(true);
+
+        try {
+          await onPay(range, clampGuests(guests));
+        } catch (error) {
+          setPaymentError(error instanceof Error && error.message ? error.message : checkoutError);
+          setIsCheckingAvailability(false);
+        }
+      }}>
+        {isCheckingAvailability ? checkingAvailabilityLabel : payLabel}
+      </button>
     </div>
 
     <form method="dialog" className="modal-backdrop">

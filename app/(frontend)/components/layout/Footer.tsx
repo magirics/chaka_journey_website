@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Manrope } from "next/font/google";
 import { Link as LocaleLink } from "../navigation";
-import { useMessages } from "next-intl";
+import { useLocale, useMessages } from "next-intl";
+import { FormEvent, useState } from "react";
 
 const vawaaSans = Manrope({
   subsets: ["latin"],
@@ -118,6 +119,36 @@ export default function Footer() {
 }
 
 export function Subscribe({ footer }: { footer: Record<string, any> }) {
+  const locale = useLocale();
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus("submitting");
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch("/api/subscribers/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: formData.get("email"),
+          locale,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Subscription failed");
+
+      form.reset();
+      setStatus("success");
+    } catch {
+      setStatus("error");
+    }
+  };
+
   return (
     <section className="max-w-[430px] md:pr-8">
       <h6 className="text-[27px] leading-[1.08] font-semibold tracking-[-0.02em] text-white md:text-[30px]">
@@ -126,12 +157,15 @@ export function Subscribe({ footer }: { footer: Record<string, any> }) {
       <p className="mt-5 max-w-[320px] text-[14px] leading-7 font-semibold text-white/80 md:text-[15px]">
         {footer?.subscribeDescription || "Se el primero en saber de nuevos maestros, destinos y anuncios."}
       </p>
-      <form className="mt-8 flex flex-col gap-6">
+      <form className="mt-8 flex flex-col gap-6" onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder={footer?.namePlaceholder || "Nombre"}
           name="name"
           id="name"
+          required
+          maxLength={80}
+          autoComplete="name"
           className="border-0 border-b border-white/40 bg-transparent px-0 pb-3 text-[15px] text-white placeholder:text-white/40 outline-none transition-colors focus:border-white focus:ring-0"
         />
         <input
@@ -139,11 +173,33 @@ export function Subscribe({ footer }: { footer: Record<string, any> }) {
           placeholder={footer?.emailPlaceholder || "Correo"}
           name="email"
           id="email"
+          required
+          maxLength={254}
+          autoComplete="email"
           className="border-0 border-b border-white/40 bg-transparent px-0 pb-3 text-[15px] text-white placeholder:text-white/40 outline-none transition-colors focus:border-white focus:ring-0"
         />
-        <button className="mt-1 h-12 w-full border border-white bg-white text-[15px] font-medium text-black transition-colors hover:bg-transparent hover:text-white md:max-w-[365px]">
-          {footer?.subscribeButtonText || "Suscribir"}
+        <button
+          type="submit"
+          disabled={status === "submitting"}
+          className="mt-1 h-12 w-full border border-white bg-white text-[15px] font-medium text-black transition-colors hover:bg-transparent hover:text-white disabled:cursor-wait disabled:opacity-60 md:max-w-[365px]"
+        >
+          {status === "submitting"
+            ? locale === "es"
+              ? "Suscribiendo..."
+              : "Subscribing..."
+            : footer?.subscribeButtonText || "Suscribir"}
         </button>
+        <p className="min-h-5 text-sm" role="status" aria-live="polite">
+          {status === "success"
+            ? locale === "es"
+              ? "Gracias por suscribirte."
+              : "Thanks for subscribing."
+            : status === "error"
+              ? locale === "es"
+                ? "No pudimos completar la suscripción. Inténtalo nuevamente."
+                : "We could not complete the subscription. Please try again."
+              : null}
+        </p>
       </form>
     </section>
   );

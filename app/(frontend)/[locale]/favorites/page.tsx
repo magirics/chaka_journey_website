@@ -5,6 +5,7 @@ import MasterCard from "@/ui/MasterCard";
 import Pricing from "@/ui/Pricing";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 
 type PayloadMaster = {
   id: number | string;
@@ -99,6 +100,7 @@ function pickLocalizedText(
 export default function FavoritesPage() {
   const locale = useLocale();
   const ui = uiByLocale[locale] || uiByLocale.en;
+  const { push } = useRouter();
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [masters, setMasters] = useState<MasterCardData[]>([]);
@@ -176,22 +178,8 @@ export default function FavoritesPage() {
 
   const favoriteSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 
-  const handleReserve = async (master: MasterCardData) => {
-    const res = await fetch("/stripe/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: master.name,
-        price: master.price,
-        days: master.days,
-        masterId: master.id,
-      }),
-    });
-
-    const data = await res.json();
-    if (data?.url) {
-      window.location.href = data.url;
-    }
+  const handleReserve = (master: MasterCardData) => {
+    push(`/masters/${master.id}?reserve=1`);
   };
 
   const toggleFavorite = (masterId: string) => {

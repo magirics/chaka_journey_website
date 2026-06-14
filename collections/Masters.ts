@@ -103,6 +103,20 @@ export const Masters: CollectionConfig = {
       },
     },
     {
+      name: 'guest_price', // Precio del taller
+      type: 'number',
+      required: true,
+      admin: {
+        description: 'Precio en soles',
+      },
+    },    
+    {
+      name: 'max_guests', // Numero maximo de invitados
+      type: 'number',
+      required: true,
+      defaultValue: 0,
+    },
+    {
       name: 'days', // Días del taller
       type: 'number',
       required: true,

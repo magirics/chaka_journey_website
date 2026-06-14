@@ -1,32 +1,31 @@
-import createMiddleware from 'next-intl/middleware';
-import { NextRequest, NextResponse } from 'next/server';
-import { routing } from './i18n/routing';
+import createMiddleware from 'next-intl/middleware'
+import { NextRequest, NextResponse } from 'next/server'
+import { routing } from './i18n/routing'
 
-const intlMiddleware = createMiddleware(routing);
+const intlMiddleware = createMiddleware(routing)
 
 export default function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname } = request.nextUrl
 
-  // Backward compatibility for outdated plural routes.
-  if (pathname.startsWith('/admin/collections/footers')) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.replace('/admin/collections/footers', '/admin/collections/footer');
-    return NextResponse.redirect(url);
+  // Public files must bypass next-intl or they get rewritten under /{locale}.
+  if (/\.[^/]+$/.test(pathname)) {
+    return NextResponse.next()
   }
 
-  if (pathname.startsWith('/api/footers')) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.replace('/api/footers', '/api/footer');
-    return NextResponse.redirect(url);
+  // Payload admin and API routes must remain unlocalized.
+  if (
+    pathname.startsWith('/admin') ||
+    pathname.match(/^\/[a-z]{2}\/admin/) ||
+    pathname.startsWith('/api') ||
+    pathname.match(/^\/[a-z]{2}\/api/) ||
+    pathname.startsWith('/_next')
+  ) {
+    return NextResponse.next()
   }
 
-  return intlMiddleware(request);
+  return intlMiddleware(request)
 }
 
 export const config = {
-  matcher: [
-    '/admin/collections/footers/:path*',
-    '/api/footers/:path*',
-    '/((?!api|stripe|typeform|admin|trpc|_next|_vercel|.*\\..*).*)',
-  ],
+  matcher: ['/((?!_next|favicon.ico|.*\\..*).*)'],
 }

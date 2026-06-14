@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 import dotenv from 'dotenv'
 
+// collections
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Reserves } from './collections/Reserves'
@@ -17,14 +18,17 @@ import { Home } from './collections/Home'
 import { Header } from './collections/Header'
 import { Footer } from './collections/Footer'
 import { Us } from './collections/Us'
+import { Sections } from './collections/Sections'
 import { TypeformSubmissions } from './collections/TypeformSubmissions'
 import { Gifts } from './collections/Gifts'
 import { GiftOrders } from './collections/GiftOrders'
-
+import { Subscribers } from './collections/Subscribers'
 
 dotenv.config()
+
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
 
 const normalizeUrl = (value?: string) => {
   if (!value) return undefined
@@ -33,6 +37,7 @@ const normalizeUrl = (value?: string) => {
 
 const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL)
 const payloadPublicUrl = normalizeUrl(process.env.PAYLOAD_PUBLIC_SERVER_URL)
+const isProduction = process.env.NODE_ENV === 'production'
 
 const codespaceName = process.env.CODESPACE_NAME
 const codespacesDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
@@ -41,7 +46,13 @@ const codespacesBaseOrigin =
     ? `https://${codespaceName}-3000.${codespacesDomain}`
     : undefined
 
-const serverURL = appUrl || payloadPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
+const devServerURL =
+  normalizeUrl(process.env.PAYLOAD_DEV_SERVER_URL) ||
+  `http://localhost:${process.env.PORT || '3000'}`
+
+const serverURL = isProduction
+  ? appUrl || payloadPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
+  : devServerURL
 const serverHost = (() => {
   try {
     return new URL(serverURL).hostname
@@ -77,60 +88,70 @@ const isCodespacesHost = serverHost.endsWith('.app.github.dev')
 export default buildConfig({
   sharp,
   editor: lexicalEditor(),
+
   localization: {
     locales: [
-      {
-        code: 'en',
-        label: 'English',
-      },
-      {
-        code: 'es',
-        label: 'Spanish',
-      },
-      {
-        code: 'de',
-        label: 'German',
-      },
-      {
-        code: 'fr',
-        label: 'French',
-      },
+      { code: 'en', label: 'English' },
+      { code: 'es', label: 'Spanish' },
+      { code: 'de', label: 'German' },
+      { code: 'fr', label: 'French' },
     ],
     defaultLocale: 'en',
     fallback: true,
   },
 
-  collections: [Users, Media, Reserves, Masters, Gifts, GiftOrders, Experiences, Home, Header, Footer, Us, TypeformSubmissions],
+  collections: [
+    Users,
+    Media,
+    Reserves,
+    Masters,
+    Gifts,
+    GiftOrders,
+    Experiences,
+    Home,
+    Header,
+    Footer,
+    Us,
+    Sections,
+    TypeformSubmissions,
+    Subscribers,
+  ],
+
   admin: {
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
     },
-    ...(isCodespacesHost
-      ? {
-          cookies: {
-            sameSite: 'none',
-            secure: true,
-            domain: '.app.github.dev',
-          },
-        }
-      : {}),
+    suppressHydrationWarning: true,
+
+    // ✅ CONFIG CLAVE (esto arregla el login)
+    cookies: {
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+    },
   },
 
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: process.env.PAYLOAD_SECRET,
+
   serverURL,
-  cookiePrefix: 'payload',
-  cors: allowedOrigins,
-  csrf: allowedOrigins,
+
+  // evita conflictos de cookies
+  cookiePrefix: 'chaka',
+
+  cors: [serverURL],
+  csrf: [serverURL],
 
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
+
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || '',
     },
   }),
+
   plugins: [
     payloadCloudPlugin(),
     // storage-adapter-placeholder

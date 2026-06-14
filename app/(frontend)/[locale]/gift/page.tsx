@@ -53,6 +53,7 @@ const textByLocale: Record<string, {
   checkoutError: string;
   madeBy: string;
   handcrafted: string;
+  itemPrice: string;
   delivery: string;
   price: string;
   checkout: string;
@@ -75,6 +76,7 @@ const textByLocale: Record<string, {
     checkoutError: "No pudimos iniciar el checkout. Intentalo de nuevo.",
     madeBy: "Creado por",
     handcrafted: "Pieza artesanal incluida",
+    itemPrice: "Precio",
     delivery: "Delivery",
     price: "Total",
     checkout: "Regalar ahora",
@@ -97,6 +99,7 @@ const textByLocale: Record<string, {
     checkoutError: "We could not start checkout. Please try again.",
     madeBy: "Made by",
     handcrafted: "Handcrafted piece included",
+    itemPrice: "Price",
     delivery: "Delivery",
     price: "Total",
     checkout: "Gift now",
@@ -119,6 +122,7 @@ const textByLocale: Record<string, {
     checkoutError: "Impossible de lancer le checkout. Reessayez.",
     madeBy: "Cree par",
     handcrafted: "Piece artisanale incluse",
+    itemPrice: "Prix",
     delivery: "Livraison",
     price: "Total",
     checkout: "Offrir maintenant",
@@ -141,6 +145,7 @@ const textByLocale: Record<string, {
     checkoutError: "Checkout konnte nicht gestartet werden. Bitte erneut versuchen.",
     madeBy: "Gemacht von",
     handcrafted: "Handgemachtes Stuck enthalten",
+    itemPrice: "Preis",
     delivery: "Lieferung",
     price: "Gesamt",
     checkout: "Jetzt verschenken",
@@ -378,6 +383,10 @@ export default function GiftPage() {
               <p className="mb-3">
                 <span className="font-semibold">{t.handcrafted}: </span>
                 {selectedGift.deliveryNotes || "Incluido"}
+              </p>
+              <p className="mb-3">
+                <span className="font-semibold">{t.itemPrice}: </span>
+                USD ${selectedGift.price}
               </p>
               <p className="mb-3">
                 <span className="font-semibold">{t.delivery}: </span>

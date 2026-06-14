@@ -16,6 +16,13 @@ export async function POST(req) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('Dev trigger error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: err.message,
+        data: err.data || null,
+        cause: err.cause || null,
+      },
+      { status: 500 }
+    );
   }
 }
