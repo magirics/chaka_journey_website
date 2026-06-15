@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "pnpm install --frozen-lockfile && next build",
     "start": "next start",
     "lint": "next lint",
     "localhost": "ssh -R 80:localhost:3000 nokey@localhost.run"
@@ -45,5 +45,10 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+
+  
+  "packageManager": "pnpm@10.13.1"
+
+
 }
