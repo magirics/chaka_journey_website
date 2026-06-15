@@ -24,7 +24,7 @@ export const Sections: CollectionConfig = {
       unique: true,
       index: true,
       admin: {
-        description: 'Se genera automaticamente cuando agregas un Navigation Link nuevo.',
+        description: 'Se genera automáticamente cuando agregas un Navigation Link nuevo.',
       },
     },
     {

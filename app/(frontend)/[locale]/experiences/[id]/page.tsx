@@ -22,7 +22,7 @@ const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
 
 });
 
-// ✅ Nueva versión con soporte multilenguaje e i18n
+//  Nueva versión con soporte multilenguaje e i18n
 export default async function ExperiencePage({
   params,
 }: {
