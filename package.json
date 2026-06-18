@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "pnpm install --frozen-lockfile && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "localhost": "ssh -R 80:localhost:3000 nokey@localhost.run"
