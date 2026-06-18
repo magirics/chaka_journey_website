@@ -53,6 +53,8 @@ type UsMessages = {
   comingSoonItems?: ComingSoonItem[];
 };
 
+const isString = (value: unknown): value is string => typeof value === "string";
+
 export default function Us() {
   const messages = useMessages();
   const us = (messages?.Us as UsMessages | undefined) || {};
@@ -61,14 +63,14 @@ export default function Us() {
     Array.isArray(us?.gallery) && us.gallery.length > 0
       ? us.gallery
           .map((item) => item?.image?.url)
-          .filter(Boolean)
+          .filter(isString)
       : [];
 
   const images = payloadImages.length > 0 ? payloadImages : fallbackImages;
 
   const comingSoonItems =
     Array.isArray(us?.comingSoonItems) && us.comingSoonItems.length > 0
-      ? us.comingSoonItems.map((item) => item?.text).filter(Boolean)
+      ? us.comingSoonItems.map((item) => item?.text).filter(isString)
       : fallbackText.comingSoonItems;
 
   return (
