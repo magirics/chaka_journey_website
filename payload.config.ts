@@ -123,13 +123,6 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     suppressHydrationWarning: true,
-
-    // ✅ CONFIG CLAVE (esto arregla el login)
-    cookies: {
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-    },
   },
 
   secret: process.env.PAYLOAD_SECRET,
