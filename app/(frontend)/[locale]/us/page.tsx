@@ -33,14 +33,34 @@ const fallbackText = {
   ],
 };
 
+type GalleryItem = {
+  image?: {
+    url?: string;
+  };
+};
+
+type ComingSoonItem = {
+  text?: string;
+};
+
+type UsMessages = {
+  gallery?: GalleryItem[];
+  introTitle?: string;
+  introText?: string;
+  description?: string;
+  workshopsText?: string;
+  comingSoonTitle?: string;
+  comingSoonItems?: ComingSoonItem[];
+};
+
 export default function Us() {
   const messages = useMessages();
-  const us = (messages?.Us as Record<string, any>) || {};
+  const us = (messages?.Us as UsMessages | undefined) || {};
 
   const payloadImages =
     Array.isArray(us?.gallery) && us.gallery.length > 0
       ? us.gallery
-          .map((item: any) => item?.image?.url)
+          .map((item) => item?.image?.url)
           .filter(Boolean)
       : [];
 
@@ -48,7 +68,7 @@ export default function Us() {
 
   const comingSoonItems =
     Array.isArray(us?.comingSoonItems) && us.comingSoonItems.length > 0
-      ? us.comingSoonItems.map((item: any) => item?.text).filter(Boolean)
+      ? us.comingSoonItems.map((item) => item?.text).filter(Boolean)
       : fallbackText.comingSoonItems;
 
   return (

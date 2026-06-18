@@ -23,10 +23,32 @@ const announcementByLocale: Record<string, string> = {
 
 const FAVORITES_STORAGE_KEY = "chaka_favorite_masters";
 
+type HeaderMedia = {
+  url?: string;
+};
+
+type HeaderNavLink = {
+  href?: string;
+  label?: string;
+};
+
+type HeaderSocialLink = {
+  href?: string;
+  icon?: string;
+  uploadedIcon?: HeaderMedia | null;
+  label?: string;
+};
+
+type HeaderMessages = {
+  logo?: HeaderMedia | null;
+  links?: HeaderNavLink[];
+  socialLinks?: HeaderSocialLink[];
+};
+
 export default function Navbar() {
   const locale = useLocale();
-  const messages = useMessages() as Record<string, any>;
-  const header = (messages?.Header as Record<string, any>) || {};
+  const messages = useMessages() as { Header?: HeaderMessages };
+  const header = messages?.Header || {};
   const logoSrc =
     header?.logo && typeof header.logo === "object" && typeof header.logo.url === "string"
       ? header.logo.url
@@ -34,7 +56,7 @@ export default function Navbar() {
   const announcement = announcementByLocale[locale] || announcementByLocale.en;
 
   const navLinks = Array.isArray(header?.links) && header.links.length > 0
-    ? header.links.map((link: any) => ({
+    ? header.links.map((link) => ({
         href: link?.href || "/home",
         text: link?.label || "Link",
       }))
@@ -46,7 +68,7 @@ export default function Navbar() {
       ];
 
   const socialLinks = Array.isArray(header?.socialLinks) && header.socialLinks.length > 0
-    ? header.socialLinks.map((link: any) => ({
+    ? header.socialLinks.map((link) => ({
         href: link?.href || "#",
         iconName: link?.icon || "instagram",
         iconSrc:

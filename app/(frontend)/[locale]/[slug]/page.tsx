@@ -1,4 +1,5 @@
 import { RichText } from '@payloadcms/richtext-lexical/react'
+import type { ComponentProps } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { fetchCollectionFirstDoc } from '../../../../i18n/request'
@@ -13,7 +14,14 @@ type PageProps = {
 type SectionDocument = {
   title?: string | null
   intro?: string | null
-  content?: Record<string, unknown> | null
+  content?: ComponentProps<typeof RichText>['data'] | null
+}
+
+type UploadNode = {
+  value?: {
+    url?: string | null
+    alt?: string | null
+  } | null
 }
 
 async function getSection(locale: string, slug: string): Promise<SectionDocument | null> {
@@ -41,9 +49,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : {}
 }
 
-const richTextConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
+const richTextConverters: NonNullable<ComponentProps<typeof RichText>['converters']> = ({
+  defaultConverters,
+}) => ({
   ...defaultConverters,
-  upload: ({ node }: { node: any }) => {
+  upload: ({ node }: { node: UploadNode }) => {
     const value = typeof node.value === 'object' ? node.value : null
     const url = value?.url
     if (!url) return null
@@ -79,7 +89,7 @@ export default async function SectionPage({ params }: PageProps) {
 
       {section.content ? (
         <section className="mx-auto mt-10 max-w-4xl text-lg leading-8 text-neutral-800 [&_a]:underline [&_h2]:mt-12 [&_h2]:mb-5 [&_h2]:text-3xl [&_h2]:font-semibold [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-2xl [&_h3]:font-semibold [&_li]:ml-6 [&_ol]:my-5 [&_ol]:list-decimal [&_p]:mb-5 [&_strong]:font-semibold [&_ul]:my-5 [&_ul]:list-disc">
-          <RichText converters={richTextConverters} data={section.content as any} />
+          <RichText converters={richTextConverters} data={section.content} />
         </section>
       ) : null}
     </article>

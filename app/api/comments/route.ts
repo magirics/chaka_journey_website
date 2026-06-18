@@ -9,6 +9,14 @@ type CreateCommentBody = {
   locale?: string
 }
 
+type HomeDocument = {
+  id?: string | number
+  comments?: Array<{
+    name: string
+    comment: string
+  }>
+}
+
 function sanitizeText(value: string, maxLength: number): string {
   return value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
 }
@@ -43,7 +51,7 @@ export async function POST(req: Request) {
     depth: 0,
   })
 
-  const homeDoc = homeResult.docs[0] as any
+  const homeDoc = homeResult.docs[0] as HomeDocument | undefined
 
   if (!homeDoc?.id) {
     return Response.json({ error: 'Home document not found' }, { status: 404 })
@@ -64,7 +72,7 @@ export async function POST(req: Request) {
     id: homeDoc.id,
     data: {
       comments: nextComments,
-    } as any,
+    } as Record<string, unknown>,
   })
 
   revalidatePath(`/${locale}/home`)

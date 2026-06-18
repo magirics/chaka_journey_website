@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       calculated: response.calculated,
       answers: response.answers,
       rawPayload: body,
-    } as any,
+    } as Record<string, unknown>,
   })
 
   return Response.json({ ok: true }, { status: 200 })

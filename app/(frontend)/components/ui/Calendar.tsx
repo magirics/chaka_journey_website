@@ -21,7 +21,7 @@ export default function Calendar({
   setValue: (v: string) => void;
   availability?: AvailabilityRange[];
 }) {
-  const onChange = (e: any) => setValue((e.target as HTMLInputElement).value);
+  const onChange = (e: Event) => setValue((e.target as HTMLInputElement).value);
 
   const isWithinAvailability = (date: Date): boolean => {
     if (!availability || availability.length === 0) return false;

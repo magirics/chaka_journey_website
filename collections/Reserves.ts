@@ -1,6 +1,9 @@
 import type { CollectionConfig, CollectionSlug } from 'payload';
 
 type RelationshipId = string | null | undefined;
+type MasterWithAvailability = {
+  availability?: Array<{ from: string; to: string }>;
+};
 
 function normalizeRelationshipId(value: unknown): RelationshipId {
   if (value === null || value === undefined) return value;
@@ -116,7 +119,7 @@ export const Reserves: CollectionConfig = {
           id: masterId,
         });
 
-        const masterAvailability = (masterDoc as any)?.availability;
+        const masterAvailability = (masterDoc as MasterWithAvailability | null)?.availability;
         if (!masterDoc || !masterAvailability) {
           throw new Error('El maestro no tiene disponibilidad configurada.');
         }

@@ -9,6 +9,12 @@ type SubscribeBody = {
 }
 
 const supportedLocales = new Set(['de', 'en', 'es', 'fr'])
+type SubscriberData = {
+  name: string
+  email?: string
+  locale: string
+  active: boolean
+}
 
 function normalizeName(value: unknown) {
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, 80) : ''
@@ -55,7 +61,7 @@ export async function POST(req: Request) {
     await payload.update({
       collection,
       id: subscriber.id,
-      data: { name, locale, active: true } as any,
+      data: { name, locale, active: true } as SubscriberData,
       overrideAccess: true,
     })
 
@@ -65,7 +71,7 @@ export async function POST(req: Request) {
   try {
     await payload.create({
       collection,
-      data: { name, email, locale, active: true } as any,
+      data: { name, email, locale, active: true } as SubscriberData,
       overrideAccess: true,
     })
   } catch (error) {

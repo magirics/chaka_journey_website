@@ -26,9 +26,57 @@ const fallbackText = {
   bottomHeroButton: "Ver maestros",
 };
 
+type PayloadImage = {
+  id?: string | number;
+  url?: string;
+};
+
+type HomePerson = {
+  name?: string;
+  craft?: string;
+  city?: string;
+  country?: string;
+};
+
+type HomeComment = {
+  name?: string;
+  comment?: string;
+};
+
+type HomeMessages = {
+  hero?: {
+    backgroundImage?: PayloadImage;
+    title?: string;
+    subtitle?: string;
+    buttonText?: string;
+  };
+  wideSections?: Array<{
+    image?: PayloadImage;
+    text?: string;
+  }>;
+  chunkyCards?: Array<{
+    image?: PayloadImage;
+    title?: string;
+    description?: string;
+    linkText?: string;
+  }>;
+  experiences?: Array<{
+    image?: PayloadImage;
+    master?: HomePerson;
+    text?: string;
+    user?: HomePerson;
+  }>;
+  comments?: HomeComment[];
+  bottomHero?: {
+    image?: PayloadImage;
+    text?: string;
+    buttonText?: string;
+  };
+};
+
 export default function Home() {
   const messages = useMessages();
-  const home = (messages?.Home as Record<string, any>) || {};
+  const home = (messages?.Home as HomeMessages | undefined) || {};
 
   const hero = home?.hero || {};
   const wideSections = Array.isArray(home?.wideSections) ? home.wideSections : [];
@@ -36,8 +84,8 @@ export default function Home() {
   const experienceCarouselItems = Array.isArray(home?.experiences) ? home.experiences : [];
   const chatCommentsItems = Array.isArray(home?.comments)
     ? home.comments
-        .filter((item: any) => item && (item.name || item.comment))
-        .map((item: any) => ({
+        .filter((item) => item && (item.name || item.comment))
+        .map((item) => ({
           name: item?.name || "Invitado",
           comment: item?.comment || "",
         }))
@@ -78,7 +126,7 @@ export default function Home() {
 
       {/* Secciones anchas */}
       <div className="mb-8 flex flex-wrap justify-center gap-6">
-        {wideSections.map((section: any, index: number) => (
+        {wideSections.map((section, index: number) => (
           <WideCarousel
             key={section.image?.id || index}
             image={section.image?.url || fallbackImages.wide}
@@ -90,7 +138,7 @@ export default function Home() {
       {/* Carrusel de experiencias */}
       <div className="relative max-w-screen">
         <div className="relative top-0 right-0 flex flex-col gap-4 overflow-x-scroll md:flex-row">
-          {experienceCarouselItems.map((experience: any, index: number) => (
+          {experienceCarouselItems.map((experience, index: number) => (
             <ExperienceCard
               key={experience.image?.id || index}
               image={experience.image?.url || fallbackImages.experience}
@@ -104,7 +152,7 @@ export default function Home() {
 
       {/* Tarjetas gruesas */}
       <div className="mb-8 flex flex-col gap-4">
-        {chunkyCards.map((card: any, index: number) => (
+        {chunkyCards.map((card, index: number) => (
           <ChunkyCard
             key={card.image?.id || index}
             image={card.image?.url || fallbackImages.chunky}
@@ -157,13 +205,13 @@ function resolveHomeLink(label: string) {
   return '/masters';
 }
 
-function normalizeUser(user: any) {
+function normalizeUser(user?: HomePerson) {
   return {
     name: user?.name || "Invitado",
   };
 }
 
-function normalizeMaster(master: any) {
+function normalizeMaster(master?: HomePerson) {
   return {
     name: master?.name || "Maestro invitado",
     craft: master?.craft || "Experiencia creativa",

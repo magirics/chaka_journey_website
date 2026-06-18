@@ -51,6 +51,30 @@ const normalizeLabel = (value: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
+type FooterLinkItem = {
+  href?: string;
+  label?: string;
+};
+
+type FooterSocialLink = {
+  href?: string;
+  icon?: string;
+  label?: string;
+};
+
+type FooterMessages = {
+  usLinks?: FooterLinkItem[];
+  termsLinks?: FooterLinkItem[];
+  socialLinks?: FooterSocialLink[];
+  copyrightText?: string;
+  subscribeTitle?: string;
+  subscribeDescription?: string;
+  namePlaceholder?: string;
+  emailPlaceholder?: string;
+  subscribeButtonText?: string;
+  contactTitle?: string;
+};
+
 function resolveFooterHref(href: string | undefined, label: string) {
   if (href && href.trim()) return href;
 
@@ -70,25 +94,25 @@ function resolveFooterHref(href: string | undefined, label: string) {
 }
 
 export default function Footer() {
-  const messages = useMessages() as Record<string, any>;
-  const footer = (messages?.Footer as Record<string, any>) || {};
+  const messages = useMessages() as { Footer?: FooterMessages };
+  const footer = messages?.Footer || {};
 
   const usLinks = Array.isArray(footer?.usLinks) && footer.usLinks.length > 0
-    ? footer.usLinks.map((link: any) => ({ href: link?.href || "#", label: link?.label || "Link" }))
+    ? footer.usLinks.map((link) => ({ href: link?.href || "#", label: link?.label || "Link" }))
     : [
         { href: "/us", label: "Nosotros" },
         { href: "/experiences", label: "Experiencias" },
       ];
 
   const termsLinks = Array.isArray(footer?.termsLinks) && footer.termsLinks.length > 0
-    ? footer.termsLinks.map((link: any) => ({
+    ? footer.termsLinks.map((link) => ({
         href: resolveFooterHref(link?.href, link?.label || "Link"),
         label: link?.label || "Link",
       }))
     : defaultTermsLinks;
 
   const socialLinks = Array.isArray(footer?.socialLinks) && footer.socialLinks.length > 0
-    ? footer.socialLinks.map((link: any) => ({
+    ? footer.socialLinks.map((link) => ({
         href: link?.href || "#",
         icon: link?.icon || "instagram",
         label: link?.label || "Social",
@@ -118,7 +142,7 @@ export default function Footer() {
   );
 }
 
-export function Subscribe({ footer }: { footer: Record<string, any> }) {
+export function Subscribe({ footer }: { footer: FooterMessages }) {
   const locale = useLocale();
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
@@ -233,7 +257,7 @@ export function Contact({
   footer,
   socialLinks,
 }: {
-  footer: Record<string, any>;
+  footer: FooterMessages;
   socialLinks: Array<{ href: string; icon: string; label: string }>;
 }) {
   return (

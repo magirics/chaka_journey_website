@@ -1,19 +1,51 @@
 import { RichText } from '@payloadcms/richtext-lexical/react';
+import type { ComponentProps } from 'react';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { experiencesCatalog } from '@/data/experiences';
 
+type MediaImage = {
+  url?: string | null;
+  alt?: string | null;
+};
+
+type Person = {
+  name?: string | null;
+  country?: string | null;
+  craft?: string | null;
+};
+
+type ExperienceDocument = {
+  title?: string | null;
+  content?: ComponentProps<typeof RichText>['data'] | null;
+  image?: MediaImage | string | null;
+  user?: Person | null;
+  master?: Person | null;
+};
+
+type MessagesObject = {
+  Experiences?: Partial<Record<'with' | 'in' | 'noContent', string>>;
+};
+
+type UploadNode = {
+  value?: MediaImage | null;
+};
+
 // Convierte los nodos del editor de Payload (RichText)
-const jsxConverters = ({ defaultConverters }: { defaultConverters: any }) => ({
+const jsxConverters: NonNullable<ComponentProps<typeof RichText>['converters']> = ({
+  defaultConverters,
+}) => ({
   ...defaultConverters,
 
-  "upload": ({ node }: { node: any }) => {
-    const url = node.value.url;
-    const alt = node.value.alt;
+  "upload": ({ node }: { node: UploadNode }) => {
+    const url = node.value?.url;
+    const alt = node.value?.alt;
+    if (!url) return null;
+
     return (
       <img
         src={url}
-        alt={alt}
+        alt={alt || ''}
         width="100%"
         className="mx-auto mt-8 mb-2 w-full max-w-[980px] object-cover"
       />
@@ -47,7 +79,7 @@ export default async function ExperiencePage({
   const isNumericId = /^\d+$/.test(id);
 
   // Prioriza Payload: por ID numerico o por clave personalizada (key).
-  let data: any = null;
+  let data: ExperienceDocument | null = null;
   const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3000';
   
   try {
@@ -58,7 +90,10 @@ export default async function ExperiencePage({
     const res = await fetch(url, { next: { revalidate: 60 } });
 
     if (res.ok) {
-      const body = await res.json();
+      const body = (await res.json()) as {
+        doc?: ExperienceDocument;
+        docs?: ExperienceDocument[];
+      } & ExperienceDocument;
       data = isNumericId ? (body?.doc || body) : (body?.docs?.[0] || null);
     }
   } catch {
@@ -81,7 +116,7 @@ export default async function ExperiencePage({
 
   // Si falta el namespace en mensajes, usamos fallback para evitar MISSING_MESSAGE.
   const localeFallback = fallbackByLocale[locale] || fallbackByLocale.en;
-  const messagesObj = messages as Record<string, any>;
+  const messagesObj = messages as MessagesObject;
   const tt = (key: 'with' | 'in' | 'noContent') =>
     messagesObj?.Experiences?.[key] || localeFallback[key];
 

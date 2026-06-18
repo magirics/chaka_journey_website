@@ -45,6 +45,62 @@ const toTitle = (slug: string) =>
     .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
     .join(' ')
 
+type HeaderLink = {
+  href?: string | null
+}
+
+type HeaderAfterChangeArgs = {
+  doc?: {
+    links?: HeaderLink[] | null
+  } | null
+  req: {
+    payload: {
+      find: (args: {
+        collection: CollectionSlug
+        where: { slug: { equals: string } }
+        limit: number
+        depth: number
+      }) => Promise<{ totalDocs: number }>
+      create: (args: {
+        collection: CollectionSlug
+        data: Record<string, unknown>
+      }) => Promise<unknown>
+    }
+  }
+}
+
+const createMissingSectionsFromHeaderLinks = async ({ doc, req }: HeaderAfterChangeArgs) => {
+  const sectionsCollection = 'sections' as unknown as CollectionSlug
+  const links = Array.isArray(doc?.links) ? doc.links : []
+  const slugs = new Set<string>()
+
+  for (const link of links) {
+    const slug = toSectionSlugFromHref(link?.href)
+    if (slug) slugs.add(slug)
+  }
+
+  for (const slug of slugs) {
+    const existing = await req.payload.find({
+      collection: sectionsCollection,
+      where: { slug: { equals: slug } },
+      limit: 1,
+      depth: 0,
+    })
+
+    if (existing.totalDocs > 0) continue
+
+    await req.payload.create({
+      collection: sectionsCollection,
+      data: {
+        version: 'main',
+        slug,
+        title: toTitle(slug),
+        intro: 'Edita este contenido desde Payload CMS.',
+      },
+    })
+  }
+}
+
 export const Header: CollectionConfig = {
   slug: 'header',
   access: {
@@ -54,39 +110,7 @@ export const Header: CollectionConfig = {
     delete: () => true,
   },
   hooks: {
-    afterChange: [
-      async ({ doc, req }) => {
-        const sectionsCollection = 'sections' as unknown as CollectionSlug
-        const links = Array.isArray(doc?.links) ? doc.links : []
-        const slugs = new Set<string>()
-
-        for (const link of links) {
-          const slug = toSectionSlugFromHref(link?.href)
-          if (slug) slugs.add(slug)
-        }
-
-        for (const slug of slugs) {
-          const existing = await req.payload.find({
-            collection: sectionsCollection,
-            where: { slug: { equals: slug } },
-            limit: 1,
-            depth: 0,
-          })
-
-          if (existing.totalDocs > 0) continue
-
-          await req.payload.create({
-            collection: sectionsCollection,
-            data: {
-              version: 'main',
-              slug,
-              title: toTitle(slug),
-              intro: 'Edita este contenido desde Payload CMS.',
-            } as any,
-          })
-        }
-      },
-    ],
+    afterChange: [createMissingSectionsFromHeaderLinks],
   },
   fields: [
     {
