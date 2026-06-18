@@ -2,7 +2,13 @@ import Stripe from 'stripe';
 import payload from 'payload';
 import nodemailer from 'nodemailer';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+
+  return new Stripe(process.env.STRIPE_SECRET_KEY);
+}
 
 function normalizeRelationshipId(value) {
   if (value === null || value === undefined) return null;
@@ -58,6 +64,7 @@ export async function fulfillCheckout(sessionId) {
 
   try {
     // 1️⃣ Recuperar la sesión de Stripe
+    const stripe = getStripe();
     const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['line_items', 'customer_details'],
     });

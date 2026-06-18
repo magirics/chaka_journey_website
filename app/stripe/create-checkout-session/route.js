@@ -4,9 +4,15 @@ import { getPayload } from "payload";
 import config from "../../../payload.config";
 
 // Inicializa Stripe con tu secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is not configured");
+  }
+
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-01-27.acacia", // 👈 ajusta a la versión que tengas habilitada en tu cuenta
-});
+  });
+}
 
 function sanitizeMetadataText(value, maxLength) {
   if (typeof value !== 'string') return '';
@@ -205,6 +211,7 @@ export async function POST(req) {
       endDate: body.endDate,
     });
 
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",

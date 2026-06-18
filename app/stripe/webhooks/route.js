@@ -8,7 +8,13 @@ export const config = {
   api: { bodyParser: false },   
   };
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  function getStripe() {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+
+    return new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
 
   export async function POST(req) {
     let event;
@@ -20,6 +26,7 @@ export const config = {
 
             try {
               console.log('Stripe webhook: signature header length:', signature ? signature.length : 'no signature');
+                const stripe = getStripe();
                 event = stripe.webhooks.constructEvent(
                       Buffer.from(buf),
                             signature,
