@@ -27,19 +27,17 @@ type MessagesObject = {
   Experiences?: Partial<Record<'with' | 'in' | 'noContent', string>>;
 };
 
-type UploadNode = {
-  value?: MediaImage | null;
-};
-
 // Convierte los nodos del editor de Payload (RichText)
 const jsxConverters: NonNullable<ComponentProps<typeof RichText>['converters']> = ({
   defaultConverters,
 }) => ({
   ...defaultConverters,
 
-  "upload": ({ node }: { node: UploadNode }) => {
-    const url = node.value?.url;
-    const alt = node.value?.alt;
+  "upload": ({ node }) => {
+    const value =
+      typeof node.value === 'object' && node.value !== null ? (node.value as MediaImage) : null;
+    const url = value?.url;
+    const alt = value?.alt;
     if (!url) return null;
 
     return (

@@ -17,11 +17,9 @@ type SectionDocument = {
   content?: ComponentProps<typeof RichText>['data'] | null
 }
 
-type UploadNode = {
-  value?: {
-    url?: string | null
-    alt?: string | null
-  } | null
+type MediaImage = {
+  url?: string | null
+  alt?: string | null
 }
 
 async function getSection(locale: string, slug: string): Promise<SectionDocument | null> {
@@ -53,8 +51,9 @@ const richTextConverters: NonNullable<ComponentProps<typeof RichText>['converter
   defaultConverters,
 }) => ({
   ...defaultConverters,
-  upload: ({ node }: { node: UploadNode }) => {
-    const value = typeof node.value === 'object' ? node.value : null
+  upload: ({ node }) => {
+    const value =
+      typeof node.value === 'object' && node.value !== null ? (node.value as MediaImage) : null
     const url = value?.url
     if (!url) return null
 
