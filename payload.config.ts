@@ -125,7 +125,7 @@ export default buildConfig({
     suppressHydrationWarning: true,
   },
 
-  secret: process.env.PAYLOAD_SECRET,
+  secret: process.env.PAYLOAD_SECRET || 'development-payload-secret',
 
   serverURL,
 
