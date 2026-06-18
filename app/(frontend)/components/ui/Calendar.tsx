@@ -15,7 +15,6 @@ export default function Calendar({
   value,
   setValue,
   availability,
-  readOnly
 }: {
   value: string;
   setValue: (v: string) => void;
