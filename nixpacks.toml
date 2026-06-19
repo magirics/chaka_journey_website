@@ -2,7 +2,7 @@
 nixPkgs = ["nodejs_20", "pnpm-10_x", "openssl"]
 
 [phases.install]
-cmds = ["corepack enable", "pnpm install --frozen-lockfile --config.optional=true"]
+cmds = ["pnpm install --frozen-lockfile --config.optional=true"]
 
 [phases.build]
 cmds = ["NODE_OPTIONS=--max-old-space-size=1024 pnpm run build"]
