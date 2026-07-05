@@ -100,34 +100,34 @@ export default function Footer() {
   const usLinks = Array.isArray(footer?.usLinks) && footer.usLinks.length > 0
     ? footer.usLinks.map((link) => ({ href: link?.href || "#", label: link?.label || "Link" }))
     : [
-        { href: "/us", label: "Nosotros" },
-        { href: "/experiences", label: "Experiencias" },
-      ];
+      { href: "/us", label: "Nosotros" },
+      { href: "/experiences", label: "Experiencias" },
+    ];
 
   const termsLinks = Array.isArray(footer?.termsLinks) && footer.termsLinks.length > 0
     ? footer.termsLinks.map((link) => ({
-        href: resolveFooterHref(link?.href, link?.label || "Link"),
-        label: link?.label || "Link",
-      }))
+      href: resolveFooterHref(link?.href, link?.label || "Link"),
+      label: link?.label || "Link",
+    }))
     : defaultTermsLinks;
 
   const socialLinks = Array.isArray(footer?.socialLinks) && footer.socialLinks.length > 0
     ? footer.socialLinks.map((link) => ({
-        href: link?.href || "#",
-        icon: link?.icon || "instagram",
-        label: link?.label || "Social",
-      }))
+      href: link?.href || "#",
+      icon: link?.icon || "instagram",
+      label: link?.label || "Social",
+    }))
     : [
-        { href: "https://instagram.com", icon: "instagram", label: "Instagram" },
-        { href: "https://facebook.com", icon: "facebook", label: "Facebook" },
-        { href: "https://twitter.com", icon: "twitter", label: "Twitter" },
-        { href: "mailto:chaka_journey@gmail.com", icon: "email", label: "Email" },
-      ];
+      { href: "https://instagram.com", icon: "instagram", label: "Instagram" },
+      { href: "https://facebook.com", icon: "facebook", label: "Facebook" },
+      { href: "https://twitter.com", icon: "twitter", label: "Twitter" },
+      { href: "mailto:chaka_journey@gmail.com", icon: "email", label: "Email" },
+    ];
 
   return (
     <footer className={`w-screen bg-[#141416] px-8 py-10 text-white md:px-12 md:py-11 ${vawaaSans.className}`}>
       <div className="mx-auto max-w-[1680px]">
-        <div className="grid gap-10 md:grid-cols-[minmax(320px,1.45fr)_minmax(170px,0.78fr)_minmax(240px,0.98fr)_minmax(220px,0.9fr)] md:gap-12">
+        <div className="mx-auto flex flex-col md:flex-row gap-12 md:justify-around">
           <Subscribe footer={footer} />
           <Us links={usLinks} />
           <Terms links={termsLinks} />
@@ -174,7 +174,7 @@ export function Subscribe({ footer }: { footer: FooterMessages }) {
   };
 
   return (
-    <section className="max-w-[430px] md:pr-8">
+    <section className="max-w-[430px]">
       <h6 className="text-[27px] leading-[1.08] font-semibold tracking-[-0.02em] text-white md:text-[30px]">
         {footer?.subscribeTitle || "No te pierdas de nada"}
       </h6>
