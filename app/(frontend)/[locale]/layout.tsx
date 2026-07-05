@@ -20,11 +20,11 @@ type Props = {
 
 type HeaderMessages = {
   favicon?:
-    | {
-        url?: string | null;
-      }
-    | string
-    | null;
+  | {
+    url?: string | null;
+  }
+  | string
+  | null;
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -55,10 +55,10 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <div className={siteSans.className}>
-      <Navbar />
-      <main className="mx-auto flex max-w-250 grow flex-col items-center">{children}</main>
-      <Footer />
+      <div className={`${siteSans.className} flex flex-col min-h-screen`}>
+        <Navbar />
+        <main className="mx-auto flex max-w-250 grow flex-col items-center">{children}</main>
+        <Footer />
       </div>
     </NextIntlClientProvider>
   );
