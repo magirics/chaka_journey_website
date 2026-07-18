@@ -18,6 +18,10 @@ export default function middleware(request: NextRequest) {
     pathname.match(/^\/[a-z]{2}\/admin/) ||
     pathname.startsWith('/api') ||
     pathname.match(/^\/[a-z]{2}\/api/) ||
+    pathname.startsWith('/stripe') ||
+    pathname.match(/^\/[a-z]{2}\/stripe/) ||
+    pathname.startsWith('/typeform') ||
+    pathname.match(/^\/[a-z]{2}\/typeform/) ||
     pathname.startsWith('/_next')
   ) {
     return NextResponse.next()

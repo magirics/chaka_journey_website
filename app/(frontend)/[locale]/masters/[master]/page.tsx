@@ -391,7 +391,18 @@ export default function Master() {
         endDate,
       }),
     });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(ui.checkoutError);
+    }
+
     const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || ui.checkoutError);
+    }
+
     if (data?.url) window.location.href = data.url;
     else {
       console.error('Error en checkout', data);
