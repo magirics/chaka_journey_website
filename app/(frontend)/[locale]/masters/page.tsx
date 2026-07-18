@@ -77,6 +77,27 @@ type PayloadMaster = {
   days?: number;
 };
 
+function resolveMediaUrl(value?: string): string {
+  if (!value || typeof value !== 'string') return '';
+
+  if (value.startsWith('/')) {
+    return value;
+  }
+
+  try {
+    const parsed = new URL(value);
+    const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+
+    if (isLocalHost && typeof window !== 'undefined') {
+      return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+    }
+
+    return value;
+  } catch {
+    return value;
+  }
+}
+
 function pickLocalizedText(
   value: string | Record<string, string | undefined> | undefined,
   locale: string,
@@ -223,10 +244,11 @@ export default function Masters() {
         const docs = Array.isArray(body?.docs) ? (body.docs as PayloadMaster[]) : [];
 
         const parsed = docs.reduce<MasterCardData[]>((acc, doc, index) => {
-          const image =
+          const rawImage =
             typeof doc.image === "object" && doc.image?.url
               ? doc.image.url
               : "";
+          const image = resolveMediaUrl(rawImage);
 
           if (!image) return acc;
 

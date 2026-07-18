@@ -47,6 +47,27 @@ const fallbackGalleryImages = [
 const SAVED_MASTERS_STORAGE_KEY = 'chaka_favorite_masters';
 const DATE_ONLY_REGEX = /\d{4}-\d{2}-\d{2}/g;
 
+function resolveMediaUrl(value?: string): string {
+  if (!value || typeof value !== 'string') return '';
+
+  if (value.startsWith('/')) {
+    return value;
+  }
+
+  try {
+    const parsed = new URL(value);
+    const isLocalHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+
+    if (isLocalHost && typeof window !== 'undefined') {
+      return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+    }
+
+    return value;
+  } catch {
+    return value;
+  }
+}
+
 function extractRangeDates(rawRange: string): { startDate: string | null; endDate: string | null } {
   if (typeof rawRange !== 'string' || rawRange.trim() === '') {
     return { startDate: null, endDate: null };
@@ -250,7 +271,7 @@ export default function Master() {
     const maxGuests = typeof masterData?.max_guests === "number" ? masterData.max_guests : 2;
     const image =
       typeof masterData?.image === "object" && masterData?.image?.url
-        ? masterData.image.url
+        ? resolveMediaUrl(masterData.image.url)
         : "/draft/masters/master/hero.avif";
     const bio =
       masterData?.bio ||
@@ -268,7 +289,7 @@ export default function Master() {
 
           const media = item.image;
           if (media && typeof media === 'object' && typeof media.url === 'string') {
-            return media.url;
+            return resolveMediaUrl(media.url);
           }
 
           return '';

@@ -35,8 +35,23 @@ const normalizeUrl = (value?: string) => {
   return value.replace(/\/+$/, '')
 }
 
+const resolveRailwayPublicUrl = () => {
+  const staticUrl = normalizeUrl(process.env.RAILWAY_STATIC_URL)
+  if (staticUrl) {
+    return /^https?:\/\//i.test(staticUrl) ? staticUrl : `https://${staticUrl}`
+  }
+
+  const publicDomain = normalizeUrl(process.env.RAILWAY_PUBLIC_DOMAIN)
+  if (publicDomain) {
+    return /^https?:\/\//i.test(publicDomain) ? publicDomain : `https://${publicDomain}`
+  }
+
+  return undefined
+}
+
 const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL)
 const payloadPublicUrl = normalizeUrl(process.env.PAYLOAD_PUBLIC_SERVER_URL)
+const railwayPublicUrl = resolveRailwayPublicUrl()
 const isProduction = process.env.NODE_ENV === 'production'
 
 const codespaceName = process.env.CODESPACE_NAME
@@ -51,7 +66,7 @@ const devServerURL =
   `http://localhost:${process.env.PORT || '3000'}`
 
 const serverURL = isProduction
-  ? appUrl || payloadPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
+  ? appUrl || payloadPublicUrl || railwayPublicUrl || codespacesBaseOrigin || 'http://localhost:3000'
   : devServerURL
 const serverHost = (() => {
   try {
@@ -80,7 +95,7 @@ const codespacesOrigins = [
 ]
 
 const allowedOrigins = Array.from(
-  new Set([...devOrigins, ...codespacesOrigins, appUrl, payloadPublicUrl].filter(Boolean) as string[]),
+  new Set([...devOrigins, ...codespacesOrigins, appUrl, payloadPublicUrl, railwayPublicUrl].filter(Boolean) as string[]),
 )
 
 const isCodespacesHost = serverHost.endsWith('.app.github.dev')
