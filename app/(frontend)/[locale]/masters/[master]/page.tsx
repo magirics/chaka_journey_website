@@ -45,6 +45,23 @@ const fallbackGalleryImages = [
 ];
 
 const SAVED_MASTERS_STORAGE_KEY = 'chaka_favorite_masters';
+const DATE_ONLY_REGEX = /\d{4}-\d{2}-\d{2}/g;
+
+function extractRangeDates(rawRange: string): { startDate: string | null; endDate: string | null } {
+  if (typeof rawRange !== 'string' || rawRange.trim() === '') {
+    return { startDate: null, endDate: null };
+  }
+
+  const matches = rawRange.match(DATE_ONLY_REGEX) || [];
+  if (matches.length === 0) {
+    return { startDate: null, endDate: null };
+  }
+
+  const startDate = matches[0] || null;
+  const endDate = matches[1] || matches[0] || null;
+
+  return { startDate, endDate };
+}
 
 const masterUiByLocale: Record<string, {
   withLabel: string;
@@ -335,16 +352,7 @@ export default function Master() {
 
   const handlePay = async (range: string, guests: number) => {
     console.log('Selected range', range)
-    let startDate = null; let endDate = null;
-    if (typeof range === 'string') {
-      if (range.includes('/')) {
-        [startDate, endDate] = range.split('/');
-      } else if (range.includes(',')) {
-        [startDate, endDate] = range.split(',').map(s => s.trim());
-      } else {
-        startDate = endDate = range;
-      }
-    }
+    const { startDate, endDate } = extractRangeDates(range);
 
     const selectedDays = getSelectedDayCount(startDate, endDate);
 
@@ -416,6 +424,7 @@ export default function Master() {
             <ReserveDialog
               onPay={handlePay}
               availability={content.availability}
+              calendarReady={ready}
               selectStayDaysLabel={ui.selectStayDays}
               selectNumberOfGuestsLabel={ui.selectNumberOfGuests}
               payLabel={ui.pay}
@@ -483,6 +492,7 @@ function Tiles({ images }: { images: string[] }) {
 function ReserveDialog({
   onPay,
   availability,
+  calendarReady,
   selectStayDaysLabel,
   selectNumberOfGuestsLabel,
   payLabel,
@@ -495,6 +505,7 @@ function ReserveDialog({
 }: {
   onPay: (range: string, guests: number) => Promise<void>;
   availability?: Array<{ from: string; to: string }>;
+  calendarReady: boolean;
   selectStayDaysLabel: string;
   selectNumberOfGuestsLabel: string;
   payLabel: string;
@@ -564,16 +575,21 @@ function ReserveDialog({
 
       <h3 className="font-bold text-lg">{selectStayDaysLabel}</h3>
       <div className="flex justify-center">
-        <Calendar
-          value={range}
-          setValue={(nextValue) => {
-            setRange(nextValue);
-            if (nextValue !== "" && showMissingDatesPopup) {
-              setShowMissingDatesPopup(false);
-            }
-          }}
-          availability={availability}
-        />
+        {calendarReady ? (
+          <Calendar
+            value={range}
+            setValue={(nextValue) => {
+              setRange(nextValue);
+              const { startDate, endDate } = extractRangeDates(nextValue);
+              if (startDate && endDate && showMissingDatesPopup) {
+                setShowMissingDatesPopup(false);
+              }
+            }}
+            availability={availability}
+          />
+        ) : (
+          <p className="py-10 text-sm opacity-70">Loading calendar...</p>
+        )}
       </div>
 
       <h3 className="font-bold text-lg">{selectNumberOfGuestsLabel}</h3>
@@ -596,7 +612,8 @@ function ReserveDialog({
       </div>
 
       <button className="btn btn-primary min-w-30 self-end" disabled={isCheckingAvailability} onClick={async () => {
-        if (range === "") {
+        const { startDate, endDate } = extractRangeDates(range);
+        if (!startDate || !endDate) {
           setShowMissingDatesPopup(true);
           return;
         }
@@ -605,7 +622,7 @@ function ReserveDialog({
         setIsCheckingAvailability(true);
 
         try {
-          await onPay(range, clampGuests(guests));
+          await onPay(`${startDate}/${endDate}`, clampGuests(guests));
         } catch (error) {
           setPaymentError(error instanceof Error && error.message ? error.message : checkoutError);
           setIsCheckingAvailability(false);

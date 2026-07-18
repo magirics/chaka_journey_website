@@ -3,6 +3,10 @@
 type AvailabilityRange = { from: string; to: string };
 
 function parseDateOnly(value: string): Date {
+  if (typeof value !== "string" || value.length < 10) {
+    return new Date(NaN);
+  }
+
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day));
 }
@@ -20,7 +24,11 @@ export default function Calendar({
   setValue: (v: string) => void;
   availability?: AvailabilityRange[];
 }) {
-  const onChange = (e: Event) => setValue((e.target as HTMLInputElement).value);
+  const onChange = (e: Event) => {
+    const target = e.currentTarget as HTMLElement & { value?: string };
+    const nextValue = typeof target?.value === "string" ? target.value : "";
+    setValue(nextValue);
+  };
 
   const isWithinAvailability = (date: Date): boolean => {
     if (!availability || availability.length === 0) return false;
@@ -28,8 +36,14 @@ export default function Calendar({
     const currentDay = getUtcDayTime(date);
 
     return availability.some(({ from, to }) => {
-      const startDay = getUtcDayTime(parseDateOnly(from));
-      const endDay = getUtcDayTime(parseDateOnly(to));
+      const startDate = parseDateOnly(from);
+      const endDate = parseDateOnly(to);
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        return false;
+      }
+
+      const startDay = getUtcDayTime(startDate);
+      const endDay = getUtcDayTime(endDate);
       return currentDay >= startDay && currentDay <= endDay;
     });
   };
