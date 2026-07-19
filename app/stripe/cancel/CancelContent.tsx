@@ -43,10 +43,10 @@ export default function CancelContent() {
 
       <div className="flex gap-3">
         <button
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/masters")}
           className="px-5 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-900 transition"
         >
-          Volver al inicio
+          Volver a Maestros
         </button>
 
         <button

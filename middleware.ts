@@ -7,6 +7,15 @@ const intlMiddleware = createMiddleware(routing)
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  const localizedStripeOrTypeform = pathname.match(/^\/([a-z]{2})\/(stripe|typeform)(?:\/.*)?$/)
+  if (localizedStripeOrTypeform) {
+    const locale = localizedStripeOrTypeform[1]
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = `/${locale}/masters`
+    redirectUrl.search = ''
+    return NextResponse.redirect(redirectUrl)
+  }
+
   // Public files must bypass next-intl or they get rewritten under /{locale}.
   if (/\.[^/]+$/.test(pathname)) {
     return NextResponse.next()
@@ -19,9 +28,7 @@ export default function middleware(request: NextRequest) {
     pathname.startsWith('/api') ||
     pathname.match(/^\/[a-z]{2}\/api/) ||
     pathname.startsWith('/stripe') ||
-    pathname.match(/^\/[a-z]{2}\/stripe/) ||
     pathname.startsWith('/typeform') ||
-    pathname.match(/^\/[a-z]{2}\/typeform/) ||
     pathname.startsWith('/_next')
   ) {
     return NextResponse.next()
