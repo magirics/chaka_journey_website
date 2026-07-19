@@ -301,6 +301,7 @@ export default function GiftPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         checkoutType: "gift",
+        locale,
         giftId: selectedGift.id,
         giftType: selectedGift.giftType,
         name: selectedGift.title,

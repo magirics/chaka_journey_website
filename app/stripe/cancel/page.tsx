@@ -9,8 +9,14 @@ export const metadata = {
   description: "Confirmación de pago cancelado",
 };
 
-export default function CancelPage() {
-  const locale = "es";
+export default async function CancelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ locale?: string }>;
+}) {
+  const allowedLocales = ["es", "en", "fr", "de"];
+  const { locale: rawLocale } = await searchParams;
+  const locale = allowedLocales.includes(String(rawLocale)) ? String(rawLocale) : "en";
   
   const messages = {
     Header: {},
@@ -22,7 +28,7 @@ export default function CancelPage() {
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Navbar />
-        <CancelContent />
+        <CancelContent locale={locale} />
         <Footer />
       </div>
     </NextIntlClientProvider>

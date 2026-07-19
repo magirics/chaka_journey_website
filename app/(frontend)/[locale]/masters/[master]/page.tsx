@@ -386,6 +386,7 @@ export default function Master() {
         name: content.title,
         price: content.price + guests * content.guestPrice,
         days: selectedDays || content.days,
+        locale,
         masterId,
         startDate,
         endDate,

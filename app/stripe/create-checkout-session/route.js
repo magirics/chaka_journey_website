@@ -34,6 +34,12 @@ function normalizeBaseUrl(rawUrl) {
   }
 }
 
+function normalizeLocale(rawLocale) {
+  if (typeof rawLocale !== "string") return "en";
+  const normalized = rawLocale.trim().toLowerCase();
+  return ["es", "en", "fr", "de"].includes(normalized) ? normalized : "en";
+}
+
 function resolveAppBaseUrl(req) {
   const fromEnv = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL);
   if (fromEnv) return fromEnv;
@@ -168,6 +174,7 @@ export async function POST(req) {
     const { name, price, days } = body;
     const checkoutType = body.checkoutType === 'gift' ? 'gift' : 'reserve';
     const safePrice = Number(price) || 0;
+    const locale = normalizeLocale(body.locale);
     const safeDeliveryFee = Number(body.deliveryFee) || 0;
     const recipientName = sanitizeMetadataText(body.recipientName, 120);
     const deliveryAddress = sanitizeMetadataText(body.deliveryAddress, 450);
@@ -227,10 +234,11 @@ export async function POST(req) {
           quantity: 1,
         },
       ],
-      success_url: `${appBaseUrl}/stripe/success?checkout_type=${checkoutType}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appBaseUrl}/stripe/cancel`,
+      success_url: `${appBaseUrl}/stripe/success?checkout_type=${checkoutType}&session_id={CHECKOUT_SESSION_ID}&locale=${locale}`,
+      cancel_url: `${appBaseUrl}/stripe/cancel?locale=${locale}`,
       metadata: {
         checkoutType,
+        locale,
         giftId: body.giftId || '',
         giftType: body.giftType || '',
         recipientName,
