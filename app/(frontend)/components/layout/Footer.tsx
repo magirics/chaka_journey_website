@@ -94,8 +94,19 @@ function resolveFooterHref(href: string | undefined, label: string) {
 }
 
 export default function Footer() {
+  const locale = useLocale();
   const messages = useMessages() as { Footer?: FooterMessages };
   const footer = messages?.Footer || {};
+
+  const fallbackContactTitleByLocale: Record<string, string> = {
+    es: "Contactanos",
+    en: "Contact",
+    fr: "Contact",
+    de: "Kontakt",
+  };
+
+  const fallbackContactTitle =
+    fallbackContactTitleByLocale[locale] || fallbackContactTitleByLocale.en;
 
   const usLinks = Array.isArray(footer?.usLinks) && footer.usLinks.length > 0
     ? footer.usLinks.map((link) => ({ href: link?.href || "#", label: link?.label || "Link" }))
@@ -131,7 +142,7 @@ export default function Footer() {
           <Subscribe footer={footer} />
           <Us links={usLinks} />
           <Terms links={termsLinks} />
-          <Contact footer={footer} socialLinks={socialLinks} />
+          <Contact footer={footer} socialLinks={socialLinks} fallbackContactTitle={fallbackContactTitle} />
         </div>
         <div className="mt-10 flex flex-col gap-4 border-t border-white/8 pt-6 text-[13px] text-white/48 md:flex-row md:items-center md:justify-between">
           <small className="tracking-[0.02em]">&copy; {new Date().getFullYear()} {footer?.copyrightText || "Chaka Journey"}</small>
@@ -256,13 +267,15 @@ export function Terms({ links }: { links: Array<{ href: string; label: string }>
 export function Contact({
   footer,
   socialLinks,
+  fallbackContactTitle,
 }: {
   footer: FooterMessages;
   socialLinks: Array<{ href: string; icon: string; label: string }>;
+  fallbackContactTitle: string;
 }) {
   return (
     <section className="pt-3 md:pt-4">
-      <h6 className="text-[15px] font-semibold text-white/92 md:text-[16px]">{footer?.contactTitle || "Contactanos"}</h6>
+      <h6 className="text-[15px] font-semibold text-white/92 md:text-[16px]">{footer?.contactTitle || fallbackContactTitle}</h6>
       <ul className="mt-6 flex flex-row flex-wrap gap-4">
         {socialLinks.map((link) => (
           <li key={`${link.href}-${link.icon}`}><SocialIcon href={link.href} icon={link.icon} label={link.label} /></li>

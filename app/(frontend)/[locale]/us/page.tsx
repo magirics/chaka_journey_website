@@ -1,6 +1,6 @@
 import PageTitle from "@/ui/PageTitle";
 import { Manrope } from "next/font/google";
-import { useMessages } from "next-intl";
+import { useLocale, useMessages } from "next-intl";
 
 const vawaaSans = Manrope({
   subsets: ["latin"],
@@ -33,6 +33,13 @@ const fallbackText = {
   ],
 };
 
+const pageTitleByLocale: Record<string, string> = {
+  es: "Nuestra experiencia",
+  en: "Our Experience",
+  fr: "Notre experience",
+  de: "Unsere Erfahrung",
+};
+
 type GalleryItem = {
   image?: {
     url?: string;
@@ -44,6 +51,8 @@ type ComingSoonItem = {
 };
 
 type UsMessages = {
+  title?: string;
+  pageTitle?: string;
   gallery?: GalleryItem[];
   introTitle?: string;
   introText?: string;
@@ -56,8 +65,15 @@ type UsMessages = {
 const isString = (value: unknown): value is string => typeof value === "string";
 
 export default function Us() {
+  const locale = useLocale();
   const messages = useMessages();
   const us = (messages?.Us as UsMessages | undefined) || {};
+  const mainTitle =
+    us?.pageTitle ||
+    us?.title ||
+    us?.introTitle ||
+    pageTitleByLocale[locale] ||
+    pageTitleByLocale.en;
 
   const payloadImages =
     Array.isArray(us?.gallery) && us.gallery.length > 0
@@ -75,7 +91,7 @@ export default function Us() {
 
   return (
     <>
-      <PageTitle>Nuestra experiencia</PageTitle>
+      <PageTitle>{mainTitle}</PageTitle>
 
       <section className={`mb-20 w-full px-6 md:px-14 ${vawaaSans.className}`}>
         <div className="mb-20 grid w-full gap-2 md:grid-cols-6 md:grid-rows-6">
