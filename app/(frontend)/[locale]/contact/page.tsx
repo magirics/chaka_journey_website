@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useLocale } from "next-intl";
 
 const contactTextByLocale: Record<string, { title: string; intro: string }> = {
@@ -25,44 +25,23 @@ const contactTextByLocale: Record<string, { title: string; intro: string }> = {
 export default function Contact() {
   const locale = useLocale();
   const content = contactTextByLocale[locale] || contactTextByLocale.en;
-  const widgetRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const typeformWindow = window as Window & {
-      tf?: {
-        load?: () => void;
-      };
-    };
+    const scriptId = "typeform-embed-script";
 
-    const mountWidget = () => {
-      if (widgetRef.current) {
-        widgetRef.current.innerHTML = "";
-      }
-
-      typeformWindow.tf?.load?.();
-    };
-
-    const existingScript = document.getElementById("typeform-embed-script") as HTMLScriptElement | null;
-
-    if (typeformWindow.tf?.load) {
-      mountWidget();
+    const existingScript = document.getElementById(scriptId);
+    if (existingScript) {
       return;
     }
 
-    if (existingScript) {
-      existingScript.addEventListener("load", mountWidget);
-      return () => existingScript.removeEventListener("load", mountWidget);
-    }
-
     const script = document.createElement("script");
-    script.src = "https://embed.typeform.com/embed.js";
-    script.id = "typeform-embed-script";
+    script.id = scriptId;
+    script.src = "https://embed.typeform.com/next/embed.js";
     script.async = true;
-    script.addEventListener("load", mountWidget);
     document.body.appendChild(script);
 
     return () => {
-      script.removeEventListener("load", mountWidget);
+      script.remove();
     };
   }, [locale]);
 
@@ -74,13 +53,14 @@ export default function Contact() {
       <p className="mb-8 max-w-2xl text-base leading-7 font-medium text-neutral-700 md:text-lg">
         {content.intro}
       </p>
-      <div
-        key={locale}
-        ref={widgetRef}
-        className="typeform-widget"
-        data-url="https://form.typeform.com/to/WcDkGrEy"
-        style={{ width: "100%", height: "500px" }}
-      ></div>
+      <div key={locale} className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <div
+          data-tf-widget="WcDkGrEy"
+          data-tf-hide-headers
+          data-tf-transitive-search-params
+          style={{ width: "100%", height: "700px" }}
+        />
+      </div>
     </div>
   );
 }
