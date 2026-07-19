@@ -222,24 +222,38 @@ export async function fulfillCheckout(sessionId) {
     }
 
     // 5️⃣ Enviar correo...
+    const smtpHost = process.env.SMTP_HOST?.trim();
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.trim();
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      console.warn('FulfillCheckout: SMTP is not fully configured; skipping email notification.', {
+        hasHost: Boolean(smtpHost),
+        hasUser: Boolean(smtpUser),
+        hasPass: Boolean(smtpPass),
+      });
+      return;
+    }
+
     const transporter = nodemailer.createTransport({
-      host:     process.env.SMTP_HOST,
+      host:     smtpHost,
       port:     Number(process.env.SMTP_PORT) || 587,
       secure:   process.env.SMTP_SECURE === 'true',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: smtpUser,
+        pass: smtpPass,
       },
     });
 
-    await transporter.sendMail({
-      from: `"Chaka Journey" <${process.env.SMTP_USER}>`,
-      to: customerEmail,
-      subject:
-        checkoutType === 'gift'
-          ? 'Tu regalo en Chaka ha sido confirmado'
-          : 'Confirmacion de tu reserva - Chaka Journey',
-      html: `
+    try {
+      await transporter.sendMail({
+        from: `"Chaka Journey" <${smtpUser}>`,
+        to: customerEmail,
+        subject:
+          checkoutType === 'gift'
+            ? 'Tu regalo en Chaka ha sido confirmado'
+            : 'Confirmacion de tu reserva - Chaka Journey',
+        html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; background-color: #f9f9f9; border: 1px solid #eee;">
       <h2 style="color: #4CAF50; text-align: center;">✅ ¡Tu pago fue recibido!</h2>
       <p style="font-size: 16px; color: #333;">
@@ -276,9 +290,12 @@ export async function fulfillCheckout(sessionId) {
       </p>
     </div>
   `,
-    });
+      });
 
-    console.log(`📧 Correo enviado a ${customerEmail}`);
+      console.log(`📧 Correo enviado a ${customerEmail}`);
+    } catch (mailError) {
+      console.error('⚠️ Email notification failed, but fulfillment completed:', mailError);
+    }
 
  
   } catch (error) {
