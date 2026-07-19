@@ -14,12 +14,6 @@ export const Us: CollectionConfig = {
       type: 'text',
     },
     {
-      name: 'pageTitle',
-      label: 'Main page title',
-      type: 'text',
-      localized: true,
-    },
-    {
       name: 'introTitle',
       label: 'Intro title',
       type: 'text',

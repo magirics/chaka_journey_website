@@ -52,7 +52,6 @@ type ComingSoonItem = {
 
 type UsMessages = {
   title?: string;
-  pageTitle?: string;
   gallery?: GalleryItem[];
   introTitle?: string;
   introText?: string;
@@ -69,7 +68,6 @@ export default function Us() {
   const messages = useMessages();
   const us = (messages?.Us as UsMessages | undefined) || {};
   const mainTitle =
-    us?.pageTitle ||
     us?.title ||
     us?.introTitle ||
     pageTitleByLocale[locale] ||
