@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/navigation";
 import Logo from "@/layout/Logo";
 import { Manrope } from "next/font/google";
 import { Fragment, MouseEventHandler, useEffect, useState } from "react";
