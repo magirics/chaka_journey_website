@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+const mediaStaticDir = process.env.PAYLOAD_UPLOAD_DIR || 'media'
+
 export const Media: CollectionConfig = {
   slug: 'media',
   access: {
@@ -15,5 +17,8 @@ export const Media: CollectionConfig = {
       required: true,
     },
   ],
-  upload: true,
+  upload: {
+    staticDir: mediaStaticDir,
+    mimeTypes: ['image/*'],
+  },
 }
