@@ -554,8 +554,13 @@ function ReserveDialog({
     return Math.min(normalizedMaxGuests, Math.max(0, value));
   };
 
+  const parseGuestsInput = (value: string) => {
+    if (value.trim() === '') return 0;
+    return clampGuests(Number(value));
+  };
+
   const [range, setRange] = useState("");
-  const [guests, setGuests] = useState(0);
+  const [guestInput, setGuestInput] = useState('0');
   const [showMissingDatesPopup, setShowMissingDatesPopup] = useState(false);
   const [showGuestLimitPopup, setShowGuestLimitPopup] = useState(false);
   const [paymentError, setPaymentError] = useState("");
@@ -630,15 +635,30 @@ function ReserveDialog({
           name='max_guests'
           type="number"
           className="input"
-          value={guests}
+          value={guestInput}
           min={0}
           max={normalizedMaxGuests}
+          step={1}
           onChange={(event) => {
-            const nextGuests = Number(event.target.value);
+            const rawValue = event.target.value;
+            if (rawValue === '') {
+              setGuestInput('');
+              return;
+            }
+
+            const nextGuests = Number(rawValue);
+            if (!Number.isFinite(nextGuests)) {
+              return;
+            }
+
             if (Number.isFinite(nextGuests) && nextGuests > normalizedMaxGuests) {
               setShowGuestLimitPopup(true);
             }
-            setGuests(clampGuests(nextGuests));
+            setGuestInput(String(clampGuests(nextGuests)));
+          }}
+          onBlur={() => {
+            if (guestInput.trim() === '') return;
+            setGuestInput(String(parseGuestsInput(guestInput)));
           }}
         />
       </div>
@@ -654,7 +674,7 @@ function ReserveDialog({
         setIsCheckingAvailability(true);
 
         try {
-          await onPay(`${startDate}/${endDate}`, clampGuests(guests));
+          await onPay(`${startDate}/${endDate}`, parseGuestsInput(guestInput));
         } catch (error) {
           setPaymentError(error instanceof Error && error.message ? error.message : checkoutError);
           setIsCheckingAvailability(false);
