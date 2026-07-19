@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocale } from "next-intl";
 
 const contactTextByLocale: Record<string, { title: string; intro: string }> = {
@@ -25,21 +25,46 @@ const contactTextByLocale: Record<string, { title: string; intro: string }> = {
 export default function Contact() {
   const locale = useLocale();
   const content = contactTextByLocale[locale] || contactTextByLocale.en;
+  const widgetRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    const typeformWindow = window as Window & {
+      tf?: {
+        load?: () => void;
+      };
+    };
+
+    const mountWidget = () => {
+      if (widgetRef.current) {
+        widgetRef.current.innerHTML = "";
+      }
+
+      typeformWindow.tf?.load?.();
+    };
+
+    const existingScript = document.getElementById("typeform-embed-script") as HTMLScriptElement | null;
+
+    if (typeformWindow.tf?.load) {
+      mountWidget();
+      return;
+    }
+
+    if (existingScript) {
+      existingScript.addEventListener("load", mountWidget);
+      return () => existingScript.removeEventListener("load", mountWidget);
+    }
+
     const script = document.createElement("script");
     script.src = "https://embed.typeform.com/embed.js";
-    script.id = "typef_orm";
+    script.id = "typeform-embed-script";
     script.async = true;
+    script.addEventListener("load", mountWidget);
     document.body.appendChild(script);
 
     return () => {
-      const existingScript = document.getElementById("typef_orm");
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
+      script.removeEventListener("load", mountWidget);
     };
-  }, []);
+  }, [locale]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 md:py-20">
@@ -50,6 +75,8 @@ export default function Contact() {
         {content.intro}
       </p>
       <div
+        key={locale}
+        ref={widgetRef}
         className="typeform-widget"
         data-url="https://form.typeform.com/to/WcDkGrEy"
         style={{ width: "100%", height: "500px" }}
