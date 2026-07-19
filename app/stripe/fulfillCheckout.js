@@ -222,38 +222,11 @@ export async function fulfillCheckout(sessionId) {
     }
 
     // 5️⃣ Enviar correo...
-    const smtpHost = process.env.SMTP_HOST?.trim();
-    const smtpUser = process.env.SMTP_USER?.trim();
-    const smtpPass = process.env.SMTP_PASS?.trim();
-
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      console.warn('FulfillCheckout: SMTP is not fully configured; skipping email notification.', {
-        hasHost: Boolean(smtpHost),
-        hasUser: Boolean(smtpUser),
-        hasPass: Boolean(smtpPass),
-      });
-      return;
-    }
-
-    const transporter = nodemailer.createTransport({
-      host:     smtpHost,
-      port:     Number(process.env.SMTP_PORT) || 587,
-      secure:   process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    });
-
-    try {
-      await transporter.sendMail({
-        from: `"Chaka Journey" <${smtpUser}>`,
-        to: customerEmail,
-        subject:
-          checkoutType === 'gift'
-            ? 'Tu regalo en Chaka ha sido confirmado'
-            : 'Confirmacion de tu reserva - Chaka Journey',
-        html: `
+    const subject =
+      checkoutType === 'gift'
+        ? 'Tu regalo en Chaka ha sido confirmado'
+        : 'Confirmacion de tu reserva - Chaka Journey';
+    const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; background-color: #f9f9f9; border: 1px solid #eee;">
       <h2 style="color: #4CAF50; text-align: center;">✅ ¡Tu pago fue recibido!</h2>
       <p style="font-size: 16px; color: #333;">
@@ -289,7 +262,79 @@ export async function fulfillCheckout(sessionId) {
         © 2025 Chaka Journey · Todos los derechos reservados
       </p>
     </div>
-  `,
+  `;
+    const resendApiKey = process.env.RESEND_API_KEY?.trim();
+
+    if (resendApiKey) {
+      try {
+        const resendResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'chaka-journey-website/1.0',
+            'Idempotency-Key': `checkout-confirmation-${sessionId}`,
+          },
+          body: JSON.stringify({
+            from: process.env.EMAIL_FROM?.trim() || 'Chaka Journey <onboarding@resend.dev>',
+            to: [customerEmail],
+            subject,
+            html,
+          }),
+        });
+
+        if (!resendResponse.ok) {
+          throw new Error(`Resend API error (${resendResponse.status}): ${await resendResponse.text()}`);
+        }
+
+        const { id } = await resendResponse.json();
+        console.log(`Correo enviado por Resend a ${customerEmail}, id: ${id}`);
+      } catch (mailError) {
+        console.error('Email notification failed, but fulfillment completed:', mailError);
+      }
+
+      return;
+    }
+
+    const smtpHost = process.env.SMTP_HOST?.trim();
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.trim();
+
+    if (!smtpHost || !smtpUser || !smtpPass) {
+      console.warn('FulfillCheckout: no email provider is fully configured; skipping email notification.', {
+        hasResendApiKey: Boolean(resendApiKey),
+        hasSmtpHost: Boolean(smtpHost),
+        hasSmtpUser: Boolean(smtpUser),
+        hasSmtpPass: Boolean(smtpPass),
+      });
+      return;
+    }
+
+    const isGmailHost = /gmail\.com$/i.test(smtpHost) || /googlemail\.com$/i.test(smtpHost);
+    const transporter = isGmailHost
+      ? nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: smtpUser, pass: smtpPass },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 10000,
+        })
+      : nodemailer.createTransport({
+          host: smtpHost,
+          port: Number(process.env.SMTP_PORT) || 587,
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: { user: smtpUser, pass: smtpPass },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 10000,
+        });
+
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM?.trim() || `"Chaka Journey" <${smtpUser}>`,
+        to: customerEmail,
+        subject,
+        html,
       });
 
       console.log(`📧 Correo enviado a ${customerEmail}`);
