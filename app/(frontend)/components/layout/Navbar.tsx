@@ -5,8 +5,8 @@ import Logo from "@/layout/Logo";
 import { Manrope } from "next/font/google";
 import { Fragment, MouseEventHandler, useEffect, useState } from "react";
 import LocaleDropdown from "@/ui/LocaleDropdown";
-
 import { useLocale, useMessages } from "next-intl";
+import { usePathname } from "next/navigation";
 
 const vawaaSans = Manrope({
   subsets: ["latin"],
@@ -259,6 +259,11 @@ export function MobileNavbar({
   const [visible, setVisible] = useState(false);
   const right = visible ? "0%" : "100%";
   const handleMinimize = () => setVisible((visible) => !visible);
+
+  const pathname = usePathname();
+  useEffect(() => {
+    setVisible(false);
+  }, [pathname])
 
   return (
     <div className={`sticky top-0 left-0 z-10 h-12 md:hidden ${vawaaSans.className}`}>
