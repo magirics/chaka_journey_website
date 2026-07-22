@@ -266,7 +266,7 @@ export function MobileNavbar({
   }, [pathname])
 
   return (
-    <div className={`sticky top-0 left-0 z-10 h-12 md:hidden ${vawaaSans.className}`}>
+    <div className={`sticky top-0 left-0 z-1000 h-12 md:hidden ${vawaaSans.className}`}>
       <NavHead handleMinimize={handleMinimize} logoSrc={logoSrc} />
       <div
         className="fixed transition-transform duration-100"
