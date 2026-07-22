@@ -570,7 +570,7 @@ function ReserveDialog({
   const guestLimitAlertMessage = guestLimitAlert.replace('{max}', String(normalizedMaxGuests));
 
   return <dialog id="id_reserve_button" className="modal">
-    <div className="modal-box rounded-none min-w-160 relative flex flex-col">
+    <div className="modal-box rounded-none md:min-w-160 relative flex flex-col">
       {showMissingDatesPopup && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 px-6">
           <div className="w-full max-w-md rounded-lg border border-[#cc9966] bg-[#1e130d] p-5 text-white shadow-lg">
