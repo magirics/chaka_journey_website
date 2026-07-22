@@ -287,11 +287,12 @@ function NavHead({
   logoSrc?: string;
 }) {
   return (
-    <nav className="bg-base-100 flex h-12 w-screen flex-row px-4">
+    <nav className="bg-base-100 flex h-12 w-screen flex-row px-4 items-center">
       <div className="mr-4 flex flex-row items-center">
         <Logo src={logoSrc} />
       </div>
       <div className="grow" />
+      <LocaleDropdown />
       <button onClick={handleMinimize}>
         <img src="/icons/burger-menu.svg" className="w-8"></img>
       </button>
