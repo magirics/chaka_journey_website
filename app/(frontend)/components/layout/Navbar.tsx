@@ -131,8 +131,6 @@ type SocialLink = {
 };
 
 function NavIcons({ links }: { links: SocialLink[] }) {
-  const hasFacebook = links.some((link) => link.iconName === "facebook");
-
   return (
     <>
       {links.map((link) => (
@@ -140,18 +138,8 @@ function NavIcons({ links }: { links: SocialLink[] }) {
           <li>
             <NavIcon href={link.href} iconSrc={link.iconSrc} label={link.label} />
           </li>
-          {link.iconName === "facebook" ? (
-            <li key={`saved-counter-${link.href}`}>
-              <FavoritesCounterIcon />
-            </li>
-          ) : null}
         </Fragment>
       ))}
-      {!hasFacebook ? (
-        <li key="saved-counter-fallback">
-          <FavoritesCounterIcon />
-        </li>
-      ) : null}
     </>
   );
 }
@@ -201,7 +189,7 @@ function FavoritesCounterIcon() {
     <Link
       href="/favorites"
       aria-label="Guardado"
-      className={`relative inline-flex h-6 w-6 items-center justify-center transition-transform ${isPopping ? 'animate-bounce scale-115' : 'hover:scale-110'}`}
+      className={`relative ml-4 inline-flex h-6 w-6 items-center justify-center transition-transform ${isPopping ? 'animate-bounce scale-115' : 'hover:scale-110'}`}
     >
       <svg
         viewBox="0 0 24 24"
@@ -297,6 +285,7 @@ function NavHead({
         <Logo src={logoSrc} />
       </div>
       <div className="grow" />
+      <FavoritesCounterIcon />
       <LocaleDropdown />
       <button onClick={handleMinimize}>
         <img src="/icons/burger-menu.svg" className="w-8"></img>
@@ -346,6 +335,7 @@ export function DesktopNavbar({
       <ul className="flex flex-row items-center gap-5">
         <NavIcons links={socialLinks} />
       </ul>
+      <FavoritesCounterIcon />
       <LocaleDropdown />
     </nav>
   );
